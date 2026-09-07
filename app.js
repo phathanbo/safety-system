@@ -53,6 +53,180 @@ let markers = [];
 let html5QrCode = null;
 let currentMapMode = 'building_er_lower'; // เริ่มต้นที่อาคารอุบัติเหตุชั้นล่าง หรือ campus
 
+
+// ==========================================
+// 0. Auth Guard — บังคับ Login ก่อนเข้าใช้
+// ==========================================
+
+// ตรวจ session ที่ยังมีอยู่ (refresh หน้าแล้วไม่ต้อง login ใหม่)
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem('pyh_session')); } catch(e) { return null; }
+}
+function setSession(officer, role) {
+  sessionStorage.setItem('pyh_session', JSON.stringify({ officer, role }));
+}
+function clearSession() {
+  sessionStorage.removeItem('pyh_session');
+}
+
+function showLoginScreen() {
+  const screen = document.getElementById('login-screen');
+  if (screen) screen.style.display = 'flex';
+}
+
+function hideLoginScreen() {
+  const screen = document.getElementById('login-screen');
+  if (screen) {
+    screen.style.opacity = '0';
+    screen.style.transition = 'opacity 0.4s ease';
+    setTimeout(() => screen.style.display = 'none', 400);
+  }
+}
+
+// เรียกเมื่อ login สำเร็จ — ซ่อน login screen แล้วเริ่ม app
+async function onLoginSuccess(officer, role) {
+  setSession(officer, role);
+  currentOfficer = officer;
+  currentUserRole = role;
+
+  // อัปเดต UI แถบบน
+  const nameEl = document.getElementById('display-user-name');
+  const roleEl = document.getElementById('display-user-role');
+  if (nameEl) nameEl.innerText = officer;
+  if (roleEl) roleEl.innerText = role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' :
+                                  role === 'executive' ? 'ผู้บริหาร' : 'เจ้าหน้าที่ผู้ตรวจ';
+
+  hideLoginScreen();
+  await initAssets(); // โหลดข้อมูลหลัง login เท่านั้น
+}
+
+// ฟังก์ชัน login จากหน้า Login Screen (ไม่ใช่ modal)
+window.loginScreenSubmit = async function() {
+  const emailInput = document.getElementById('ls-email');
+  const pwdInput   = document.getElementById('ls-pwd');
+  const errBox     = document.getElementById('login-screen-error');
+  const btn        = document.getElementById('ls-submit-btn');
+  const email      = emailInput ? emailInput.value.trim() : '';
+  const pwd        = pwdInput ? pwdInput.value : '';
+
+  if (!email || !pwd) {
+    if (errBox) { errBox.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; errBox.style.display = 'block'; }
+    return;
+  }
+  if (errBox) errBox.style.display = 'none';
+  if (btn) { btn.textContent = 'กำลังเข้าสู่ระบบ...'; btn.disabled = true; }
+
+  // โหลด users จาก Firestore ก่อนเสมอ
+  const users = await loadUsersFromFirestore();
+  const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+  if (user) {
+    if (user.password !== pwd) {
+      if (errBox) { errBox.textContent = '❌ รหัสผ่านไม่ถูกต้อง'; errBox.style.display = 'block'; }
+      if (btn)    { btn.textContent = '🔑 เข้าสู่ระบบ'; btn.disabled = false; }
+      return;
+    }
+    if (!user.verified) {
+      if (errBox) { errBox.textContent = '❌ บัญชียังไม่ได้รับการยืนยันจาก Admin'; errBox.style.display = 'block'; }
+      if (btn)    { btn.textContent = '🔑 เข้าสู่ระบบ'; btn.disabled = false; }
+      return;
+    }
+    const officer = user.name + ' (' + user.dept + ')';
+    await onLoginSuccess(officer, user.role);
+    if (emailInput) emailInput.value = '';
+    if (pwdInput)   pwdInput.value = '';
+    return;
+  }
+
+  // ถ้าไม่มีใน local ลองผ่าน Firebase Auth
+  if (isFirebaseReady() && auth) {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pwd);
+      const officer = cred.user.email;
+      await onLoginSuccess(officer, 'inspector');
+      if (emailInput) emailInput.value = '';
+      if (pwdInput)   pwdInput.value = '';
+    } catch(err) {
+      const msg = err.code === 'auth/invalid-credential' ? '❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง' : '❌ ' + err.message;
+      if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+      if (btn)    { btn.textContent = '🔑 เข้าสู่ระบบ'; btn.disabled = false; }
+    }
+    return;
+  }
+
+  if (errBox) { errBox.textContent = '❌ ไม่พบบัญชีผู้ใช้นี้ในระบบ'; errBox.style.display = 'block'; }
+  if (btn)    { btn.textContent = '🔑 เข้าสู่ระบบ'; btn.disabled = false; }
+};
+
+// กด Enter ใน input ก็ submit ได้
+document.addEventListener('DOMContentLoaded', () => {
+  ['ls-email', 'ls-pwd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') window.loginScreenSubmit(); });
+  });
+
+  // โหมด Guest — เปิดให้ดูได้ทันทีโดยไม่ต้อง login
+  // ถ้ามี session เดิมอยู่ ให้ใช้ต่อ (ไม่ต้องพิมพ์ใหม่)
+  const session = getSession();
+  if (session && session.officer) {
+    currentOfficer = session.officer;
+    currentUserRole = session.role;
+    const nameEl = document.getElementById('display-user-name');
+    const roleEl = document.getElementById('display-user-role');
+    if (nameEl) nameEl.innerText = session.officer;
+    if (roleEl) roleEl.innerText = session.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' :
+                                    session.role === 'executive' ? 'ผู้บริหาร' : 'เจ้าหน้าที่ผู้ตรวจ';
+  } else {
+    // Guest — แสดงชื่อเป็น "ผู้เยี่ยมชม"
+    const nameEl = document.getElementById('display-user-name');
+    const roleEl = document.getElementById('display-user-role');
+    if (nameEl) nameEl.innerText = 'ผู้เยี่ยมชม (Guest)';
+    if (roleEl) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+  }
+
+  // โหลดข้อมูลและแสดงแอปทันที (ไม่บังคับ login)
+  initAssets();
+});
+
+// ออกจากระบบ — ล้าง session แล้วแสดงหน้า Login ใหม่
+window.logoutUser = async function() {
+  if (!confirm('ต้องการออกจากระบบใช่ไหม?')) return;
+  clearSession();
+  currentOfficer = '';
+  currentUserRole = '';
+  if (isFirebaseReady() && auth) {
+    try { await signOut(auth); } catch(e) {}
+  }
+  // กลับเป็น Guest Mode
+  const nameEl = document.getElementById('display-user-name');
+  const roleEl = document.getElementById('display-user-role');
+  if (nameEl) nameEl.innerText = 'ผู้เยี่ยมชม (Guest)';
+  if (roleEl) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+};
+
+// ==========================================
+// Guard: เช็คก่อนทำ action ที่ต้องการ login
+// ใช้งาน: if (!requireLogin('บันทึกข้อมูล')) return;
+// ==========================================
+function requireLogin(actionName = 'ดำเนินการนี้') {
+  const session = getSession();
+  if (session && session.officer) return true; // login อยู่แล้ว ✅
+
+  // ยังไม่ login — แสดง login screen พร้อมข้อความแจ้ง
+  const errBox = document.getElementById('login-screen-error');
+  const screen = document.getElementById('login-screen');
+  if (errBox) {
+    errBox.textContent = `🔒 กรุณาเข้าสู่ระบบก่อน${actionName}`;
+    errBox.style.display = 'block';
+  }
+  if (screen) {
+    screen.style.display = 'flex';
+    screen.style.opacity = '1';
+    screen.style.transition = 'none';
+  }
+  return false;
+}
+
 // ==========================================
 // 1. การสลับแท็บเมนู
 // ==========================================
@@ -78,7 +252,14 @@ window.switchTab = function(tabId) {
   if (tabId === 'register') {
     setTimeout(() => {
       if (typeof window.initRegisterMap === 'function') window.initRegisterMap();
+      if (typeof window.autoSuggestRegisterId === 'function') window.autoSuggestRegisterId();
     }, 150);
+  }
+  if (tabId === 'assets') {
+    if (typeof window.renderAssetListTable === 'function') window.renderAssetListTable();
+  }
+  if (tabId === 'history') {
+    if (typeof renderHistoryTable === 'function') renderHistoryTable();
   }
   if (tabId === 'report') {
     if (typeof window.autoLoadExecutiveFullReport === 'function') {
@@ -154,6 +335,9 @@ async function initAssets() {
   updateDashboardUI();
   renderHistoryTable();
   initMap();
+  if (typeof window.autoSuggestRegisterId === 'function') {
+    window.autoSuggestRegisterId();
+  }
 }
 
 // อัปเดตข้อมูลสรุป Dashboard & KPIs
@@ -181,6 +365,7 @@ function updateDashboardUI() {
 function initMap() {
   const mapElem = document.getElementById('floor-map');
   if (!mapElem) return;
+  if (map) return; // ป้องกัน initialize ซ้ำ
 
   // สร้าง Map Instance เริ่มต้น
   map = L.map('floor-map', {
@@ -387,27 +572,74 @@ window.closeQuickAddModal = function() {
   isAddingAssetOnDashboard = false;
 };
 
+const buildingZoneMap = {
+  building_er_lower: 'ER1',
+  building_er_upper: 'ER2',
+  building_hpc: 'HPC',
+  building_ipd: 'IPD',
+  building_nisit: 'NSK',
+  building_opd_dm: 'OPD'
+};
+
+window.getNextAssetId = function(buildingId, typeName) {
+  const zone = buildingZoneMap[buildingId] || 'ER1';
+  const typeStr = (typeName || '').toLowerCase();
+  const isFE = typeStr.includes('ถังดับเพลิง') || typeStr.includes('clean') || typeStr.includes('co2') || typeStr.includes('dry') || typeStr.includes('fe') || typeStr.includes('เคมี');
+  const typeCode = isFE ? 'FE' : 'EM';
+  const prefix = `PYH-${typeCode}-${zone}-`;
+
+  let maxNum = 0;
+  if (Array.isArray(assetsList)) {
+    assetsList.forEach(a => {
+      if (!a.assetId) return;
+      const id = a.assetId.trim().toUpperCase();
+      if (id.startsWith(prefix)) {
+        const numPart = id.slice(prefix.length);
+        const n = parseInt(numPart, 10);
+        if (!isNaN(n) && n > maxNum) maxNum = n;
+      }
+    });
+  }
+
+  const nextSeq = String(maxNum + 1).padStart(2, '0');
+  return `${prefix}${nextSeq}`;
+};
+
 window.autoSuggestQuickAddId = function() {
   const typeSelect = document.getElementById('quick-add-type');
   const idInput = document.getElementById('quick-add-id');
   if (!idInput) return;
 
-  const isFE = typeSelect ? (typeSelect.value.includes('ถังดับเพลิง') || typeSelect.value.includes('Dry') || typeSelect.value.includes('CO2')) : true;
-  const prefix = isFE ? 'PYH-FE-' : 'PYH-EM-';
+  const targetBuildingId = (currentMapMode === 'campus') ? 'building_er_lower' : currentMapMode;
+  const type = typeSelect ? typeSelect.value : '';
+  const nextId = window.getNextAssetId(targetBuildingId, type);
+  idInput.value = nextId;
 
-  let maxNum = 0;
-  assetsList.forEach(a => {
-    if (a.assetId && a.assetId.startsWith(prefix)) {
-      const numPart = parseInt(a.assetId.replace(prefix, ''), 10);
-      if (!isNaN(numPart) && numPart > maxNum) maxNum = numPart;
-    }
-  });
+  const quickBadge = document.getElementById('quick-add-id-auto-badge');
+  if (quickBadge) {
+    quickBadge.innerText = `⚡ รันต่ออัตโนมัติ: ${nextId}`;
+  }
+};
 
-  const nextNum = String(maxNum + 1).padStart(2, '0');
-  idInput.value = `${prefix}${nextNum}`;
+window.autoSuggestRegisterId = function() {
+  const regIdInput = document.getElementById('reg-id');
+  const buildingSelect = document.getElementById('reg-building-select');
+  const typeSelect = document.getElementById('reg-type');
+  if (!regIdInput || !buildingSelect || !typeSelect) return;
+
+  const buildingId = buildingSelect.value;
+  const type = typeSelect.value;
+  const nextId = window.getNextAssetId(buildingId, type);
+  regIdInput.value = nextId;
+
+  const autoBadge = document.getElementById('reg-id-auto-badge');
+  if (autoBadge) {
+    autoBadge.innerText = `⚡ รันต่ออัตโนมัติ: ${nextId}`;
+  }
 };
 
 window.submitQuickAddAsset = async function() {
+  if (!requireLogin('เพิ่มอุปกรณ์ใหม่')) return;
   const idInput = document.getElementById('quick-add-id');
   const typeSelect = document.getElementById('quick-add-type');
   const locationInput = document.getElementById('quick-add-location');
@@ -473,8 +705,8 @@ function renderMapPins() {
   const isAdmin = currentUserRole === 'admin';
 
   if (currentMapMode === 'campus') {
-    assetsList.forEach(item => {
-      if (!item.campusCoord) return;
+    const campusAssets = assetsList.filter(a => a.campusCoord);
+    campusAssets.forEach((item, index) => {
       const isReady = item.status === 'READY';
       const color = isReady ? '#16a34a' : '#dc2626';
 
@@ -530,10 +762,11 @@ function renderMapPins() {
 
       marker.bindPopup(`
         <div style="font-size:13px;">
+          <div style="display:inline-block; background:#e0f2fe; color:#0369a1; font-weight:bold; padding:2px 8px; border-radius:4px; font-size:11px; margin-bottom:4px;">ลำดับที่ ${index + 1}</div><br>
           <b>${item.assetId}</b><br>
           ${item.type}<br>
           ${item.building} (${item.location})<br>
-          สถานะ: <b style="color:${color}">${isReady ? 'พร้อมใช้งาน' : 'ชำรุด/แจ้งซ่อม'}</b><br>
+          สถานะ: <b style="color:${color}">${isReady ? '✅ พร้อมใช้งาน' : '⚠️ ชำรุด/แจ้งซ่อม'}</b><br>
           ${adminPopupHtml}
           <button onclick="handleScanned('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#00695c; color:white;">ตรวจเช็กจุดนี้</button>
         </div>
@@ -543,7 +776,7 @@ function renderMapPins() {
   } else {
     // ปักหมุดบนผังอาคาร
     const buildingAssets = assetsList.filter(a => a.buildingId === currentMapMode);
-    buildingAssets.forEach(item => {
+    buildingAssets.forEach((item, index) => {
       if (!item.floorCoord) return;
       const isReady = item.status === 'READY';
       const pinColor = isReady ? '#16a34a' : '#dc2626';
@@ -603,11 +836,12 @@ function renderMapPins() {
 
       marker.bindPopup(`
         <div style="font-size: 13px;">
+          <div style="display:inline-block; background:#e0f2fe; color:#0369a1; font-weight:bold; padding:2px 8px; border-radius:4px; font-size:11px; margin-bottom:4px;">ลำดับที่ ${index + 1}</div><br>
           <strong style="color: #0284c7;">${item.assetId}</strong><br>
           <b>ประเภท:</b> ${item.type}<br>
           <b>จุดติดตั้ง:</b> ${item.location}<br>
           <b>สถานะ:</b> <span style="color:${pinColor}; font-weight:bold;">
-            ${isReady ? 'พร้อมใช้งาน' : 'ชำรุด/แจ้งซ่อม'}
+            ${isReady ? '✅ พร้อมใช้งาน' : '⚠️ ชำรุด/แจ้งซ่อม'}
           </span><br>
           ${adminPopupHtml}
           <button onclick="handleScanned('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background: #00695c; color: white;">
@@ -618,6 +852,62 @@ function renderMapPins() {
       markers.push(marker);
     });
   }
+
+  // อัปเดตการ์ดลำดับจุดติดตั้งด้านล่างแผนที่ (Dashboard Asset Quick Chips)
+  renderDashboardAssetChips();
+}
+
+// ฟังก์ชันแสดงการ์ดลำดับอุปกรณ์ประจำโซน/อาคารปัจจุบัน
+function renderDashboardAssetChips() {
+  const chipsContainer = document.getElementById('dashboard-asset-chips');
+  const countEl = document.getElementById('dashboard-zone-count');
+  if (!chipsContainer) return;
+
+  const currentAssets = currentMapMode === 'campus'
+    ? assetsList.filter(a => a.campusCoord)
+    : assetsList.filter(a => a.buildingId === currentMapMode);
+
+  if (countEl) countEl.innerText = currentAssets.length;
+  chipsContainer.innerHTML = '';
+
+  if (currentAssets.length === 0) {
+    chipsContainer.innerHTML = '<span style="font-size:0.82rem; color:#94a3b8;">ยังไม่มีอุปกรณ์ที่ระบุพิกัดในอาคารนี้</span>';
+    return;
+  }
+
+  currentAssets.forEach((item, idx) => {
+    const isReady = item.status === 'READY';
+    const chip = document.createElement('div');
+    chip.style.cssText = `
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;
+      background: ${isReady ? '#f0fdf4' : '#fef2f2'};
+      border: 1px solid ${isReady ? '#bbf7d0' : '#fecaca'};
+      color: #1e293b; cursor: pointer; transition: all 0.2s;
+    `;
+    chip.title = `คลิกเพื่อซูมดู [${item.assetId}] ${item.location || ''}`;
+    chip.innerHTML = `
+      <span style="background:${isReady ? '#16a34a' : '#dc2626'}; color:white; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:4px;">#${idx + 1}</span>
+      <b>${item.assetId}</b>
+      <span style="color:#64748b; font-size:0.75rem;">(${item.location || '-'})</span>
+    `;
+
+    chip.onmouseenter = () => chip.style.transform = 'translateY(-2px)';
+    chip.onmouseleave = () => chip.style.transform = 'translateY(0)';
+    chip.onclick = () => {
+      // ซูมและเปิด popup ของหมุดตัวนี้
+      const marker = markers[idx];
+      if (marker && map) {
+        if (currentMapMode === 'campus' && item.campusCoord) {
+          map.setView([item.campusCoord.lat, item.campusCoord.lng], 19);
+        } else if (item.floorCoord) {
+          map.setView(item.floorCoord, 1);
+        }
+        marker.openPopup();
+      }
+    };
+    chipsContainer.appendChild(chip);
+  });
 }
 
 window.locateUserGPS = function() {
@@ -649,7 +939,18 @@ function startScanner() {
     },
     () => {}
   ).catch(err => {
-    console.log("Scanner warning:", err);
+    const qrBox = document.getElementById('qr-reader');
+    if (err && (err.name === 'NotFoundError' || err.message?.includes('not found'))) {
+      if (qrBox) qrBox.innerHTML = `
+        <div style="padding:32px; text-align:center; color:#64748b; background:#f8fafc; border-radius:12px; border:2px dashed #cbd5e1;">
+          <div style="font-size:3rem; margin-bottom:8px;">📵</div>
+          <b>ไม่พบกล้องในอุปกรณ์นี้</b><br>
+          <span style="font-size:0.85rem;">กรุณาใช้งานบนสมาร์ทโฟนหรืออุปกรณ์ที่มีกล้อง</span><br><br>
+          <span style="font-size:0.8rem; color:#94a3b8;">หรือพิมพ์รหัสอุปกรณ์ด้านล่างโดยตรง</span>
+        </div>`;
+    } else {
+      console.warn('Scanner warning:', err);
+    }
   });
 }
 
@@ -663,6 +964,7 @@ window.stopScanner = function() {
 // 5. จัดการแบบฟอร์มตรวจสอบ (Checklist FE vs EM)
 // ==========================================
 window.handleScanned = function(assetId) {
+  if (!requireLogin('บันทึกผลการตรวจ')) return;
   const asset = assetsList.find(a => a.assetId.toLowerCase() === assetId.toLowerCase());
   if (!asset) {
     alert(`ไม่พบอุปกรณ์รหัส "${assetId}" ในระบบ กรุณาตรวจสอบหรือลงทะเบียนใหม่`);
@@ -978,6 +1280,11 @@ if (regForm) {
     updateDashboardUI();
     renderMapPins();
     alert(`ลงทะเบียนอุปกรณ์ ${assetId} สำเร็จ! พร้อมพิมพ์สติกเกอร์`);
+
+    document.getElementById('reg-location').value = '';
+    if (typeof window.autoSuggestRegisterId === 'function') {
+      window.autoSuggestRegisterId();
+    }
   });
 }
 
@@ -989,25 +1296,278 @@ function renderHistoryTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  if (inspectionLogs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#64748b; padding:20px;">ยังไม่มีประวัติการตรวจเช็ก</td></tr>`;
+  const filterStatus  = document.getElementById('history-filter-status')?.value || '';
+  const keyword       = (document.getElementById('history-search')?.value || '').toLowerCase();
+
+  let logs = [...inspectionLogs];
+
+  // กรองตามสถานะ
+  if (filterStatus) logs = logs.filter(l => l.status === filterStatus);
+  // กรองตามรหัสอุปกรณ์
+  if (keyword) logs = logs.filter(l => l.assetId?.toLowerCase().includes(keyword));
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">ไม่พบรายการที่ตรงกัน</td></tr>`;
     return;
   }
 
-  inspectionLogs.slice(0, 50).forEach(log => {
+  logs.slice(0, 100).forEach((log, index) => {
     const isPass = log.status === 'READY';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${log.timestampStr || log.timestampISO || '-'}</td>
+      <td style="text-align:center; color:#94a3b8; font-size:0.8rem; width:40px;">${index + 1}</td>
+      <td style="font-size:0.82rem;">${log.timestampStr || log.timestampISO || '-'}</td>
       <td><b>${log.assetId}</b></td>
-      <td>${log.inspector || '-'}</td>
-      <td><span class="badge ${isPass ? 'badge-ready' : 'badge-issue'}">${isPass ? 'ปกติ' : 'ชำรุด'}</span></td>
+      <td style="font-size:0.82rem;">${log.inspector || '-'}</td>
+      <td><span class="badge ${isPass ? 'badge-ready' : 'badge-issue'}">${isPass ? '✅ ปกติ' : '⚠️ ชำรุด'}</span></td>
       <td>${log.photoURL ? `<a href="${log.photoURL}" target="_blank"><img class="img-thumb" src="${log.photoURL}" alt="ภาพหลักฐาน"></a>` : '-'}</td>
-      <td>${log.notes || '-'}</td>
+      <td style="font-size:0.82rem;">${log.notes || '-'}</td>
     `;
     tbody.appendChild(tr);
   });
 }
+
+// ==========================================
+// 7.5 ตารางรายการอุปกรณ์ + QR Code
+// ==========================================
+let _qrModalAsset = null; // เก็บ asset ที่เปิด QR modal อยู่
+
+window.renderAssetListTable = function() {
+  const tbody = document.getElementById('asset-list-rows');
+  if (!tbody) return;
+
+  const keyword     = (document.getElementById('asset-search')?.value || '').toLowerCase();
+  const sortMode    = document.getElementById('asset-sort')?.value || 'default';
+
+  let filtered = assetsList.filter(a =>
+    !keyword ||
+    a.assetId?.toLowerCase().includes(keyword) ||
+    a.type?.toLowerCase().includes(keyword) ||
+    a.location?.toLowerCase().includes(keyword) ||
+    a.building?.toLowerCase().includes(keyword)
+  );
+
+  // เรียงลำดับ
+  if (sortMode === 'issue-first') {
+    filtered = [...filtered].sort((a, b) => {
+      if (a.status === 'ISSUE' && b.status !== 'ISSUE') return -1;
+      if (a.status !== 'ISSUE' && b.status === 'ISSUE') return 1;
+      return 0;
+    });
+  } else if (sortMode === 'building') {
+    filtered = [...filtered].sort((a, b) => (a.building || '').localeCompare(b.building || ''));
+  } else if (sortMode === 'id') {
+    filtered = [...filtered].sort((a, b) => (a.assetId || '').localeCompare(b.assetId || ''));
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; padding:20px;">ไม่พบอุปกรณ์</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((a, idx) => {
+    const statusBadge = a.status === 'READY'
+      ? `<span class="badge badge-ready">✅ พร้อมใช้</span>`
+      : a.status === 'ISSUE'
+      ? `<span class="badge badge-issue">⚠️ แจ้งซ่อม</span>`
+      : `<span style="color:#94a3b8;">-</span>`;
+
+    // นับจำนวนครั้งที่เคยตรวจอุปกรณ์ชิ้นนี้
+    const checkCount = inspectionLogs.filter(l => l.assetId?.toLowerCase() === a.assetId?.toLowerCase()).length;
+
+    return `<tr>
+      <td style="text-align:center; color:#94a3b8; font-size:0.8rem; width:40px;">${idx + 1}</td>
+      <td><b>${a.assetId}</b></td>
+      <td style="font-size:0.82rem;">${a.type || '-'}</td>
+      <td style="font-size:0.82rem;">${a.building || ''} ${a.location ? '— ' + a.location : ''}</td>
+      <td>${statusBadge}</td>
+      <td style="text-align:center;">
+        <button onclick="showAssetHistoryModal('${a.assetId}')"
+          style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; border-radius:6px;
+                 padding:4px 10px; font-size:0.8rem; cursor:pointer; font-weight:600; transition:all 0.2s;"
+          onmouseenter="this.style.background='#e2e8f0'"
+          onmouseleave="this.style.background='#f1f5f9'">
+          📜 ดูประวัติ (${checkCount})
+        </button>
+      </td>
+      <td style="text-align:center;">
+        <div id="qr-mini-${a.assetId.replace(/[^a-zA-Z0-9]/g,'-')}"
+          style="display:inline-block; cursor:pointer;"
+          onclick="showQRModal('${a.assetId}')">
+        </div>
+      </td>
+      <td style="text-align:center;">
+        <button onclick="showQRModal('${a.assetId}')"
+          style="background:#00695c; color:white; border:none; border-radius:6px;
+                 padding:5px 12px; font-size:0.8rem; cursor:pointer; white-space:nowrap;">
+          🖨️ ดู / พิมพ์
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // สร้าง QR เล็กๆ ในแต่ละแถว
+  filtered.forEach(a => {
+    const containerId = `qr-mini-${a.assetId.replace(/[^a-zA-Z0-9]/g,'-')}`;
+    const el = document.getElementById(containerId);
+    if (el && el.innerHTML === '') {
+      try { new QRCode(el, { text: a.assetId, width: 48, height: 48 }); } catch(e) {}
+    }
+  });
+};
+
+// ฟังก์ชันเปิดดูประวัติการตรวจเฉพาะอุปกรณ์ชิ้นนี้
+window.showAssetHistoryModal = function(assetId) {
+  const asset = assetsList.find(a => a.assetId?.toLowerCase() === assetId?.toLowerCase());
+  const modal = document.getElementById('asset-history-modal');
+  const titleEl = document.getElementById('asset-modal-title');
+  const subEl = document.getElementById('asset-modal-subtitle');
+  const rowsEl = document.getElementById('asset-history-modal-rows');
+
+  if (!modal || !rowsEl) return;
+
+  const logs = inspectionLogs.filter(l => l.assetId?.toLowerCase() === assetId?.toLowerCase());
+
+  titleEl.innerText = `📜 ประวัติการตรวจ: ${assetId}`;
+  subEl.innerText = `${asset?.type || 'อุปกรณ์ความปลอดภัย'} • ${asset?.building || ''} (${asset?.location || '-'})`;
+
+  if (logs.length === 0) {
+    rowsEl.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; color:#64748b; padding:28px 16px;">
+          ยังไม่เคยมีบันทึกการตรวจเช็กสำหรับอุปกรณ์ <b>${assetId}</b>
+        </td>
+      </tr>
+    `;
+  } else {
+    rowsEl.innerHTML = logs.map((log, i) => {
+      const isPass = log.status === 'READY';
+      return `
+        <tr>
+          <td style="text-align:center; color:#94a3b8; font-size:0.8rem;">${i + 1}</td>
+          <td style="font-size:0.82rem; white-space:nowrap;">${log.timestampStr || log.timestampISO || '-'}</td>
+          <td style="font-size:0.82rem;">${log.inspector || '-'}</td>
+          <td><span class="badge ${isPass ? 'badge-ready' : 'badge-issue'}">${isPass ? '✅ ปกติ' : '⚠️ ชำรุด'}</span></td>
+          <td>${log.photoURL ? `<a href="${log.photoURL}" target="_blank"><img class="img-thumb" src="${log.photoURL}" alt="หลักฐาน"></a>` : '-'}</td>
+          <td style="font-size:0.82rem;">${log.notes || '-'}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closeAssetHistoryModal = function() {
+  const modal = document.getElementById('asset-history-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.showQRModal = function(assetId) {
+  const asset = assetsList.find(a => a.assetId === assetId);
+  if (!asset) return;
+  _qrModalAsset = asset;
+
+  const modal     = document.getElementById('qr-modal');
+  const title     = document.getElementById('qr-modal-title');
+  const canvas    = document.getElementById('qr-modal-canvas');
+  const label     = document.getElementById('qr-modal-label');
+
+  title.textContent = `QR Code — ${asset.assetId}`;
+  label.innerHTML   = `<b>${asset.assetId}</b><br>${asset.type || ''}<br>${asset.building || ''} ${asset.location ? '— ' + asset.location : ''}`;
+  canvas.innerHTML  = '';
+
+  new QRCode(canvas, {
+    text: asset.assetId,
+    width: 200,
+    height: 200,
+    colorDark: '#000000',
+    colorLight: '#ffffff'
+  });
+
+  modal.style.display = 'flex';
+};
+
+window.closeQRModal = function() {
+  document.getElementById('qr-modal').style.display = 'none';
+  _qrModalAsset = null;
+};
+
+window.downloadQR = function() {
+  const canvas = document.querySelector('#qr-modal-canvas canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `QR-${_qrModalAsset?.assetId || 'asset'}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
+
+window.printQRModal = function() {
+  const canvas = document.querySelector('#qr-modal-canvas canvas');
+  if (!canvas || !_qrModalAsset) return;
+  const a = _qrModalAsset;
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>QR - ${a.assetId}</title>
+    <style>
+      body { font-family: 'Sarabun', sans-serif; text-align:center; padding:30px; }
+      img { width:200px; height:200px; }
+      h2 { margin:10px 0 4px; font-size:1.1rem; }
+      p  { margin:2px 0; font-size:0.85rem; color:#444; }
+    </style></head><body>
+    <img src="${canvas.toDataURL()}">
+    <h2>${a.assetId}</h2>
+    <p>${a.type || ''}</p>
+    <p>${a.building || ''} ${a.location ? '— ' + a.location : ''}</p>
+    <script>window.onload=()=>{ window.print(); window.close(); }<\/script>
+    </body></html>`);
+  win.document.close();
+};
+
+window.printAllQR = function() {
+  const keyword = (document.getElementById('asset-search')?.value || '').toLowerCase();
+  const filtered = assetsList.filter(a =>
+    !keyword ||
+    a.assetId?.toLowerCase().includes(keyword) ||
+    a.type?.toLowerCase().includes(keyword) ||
+    a.location?.toLowerCase().includes(keyword)
+  );
+  if (filtered.length === 0) { alert('ไม่พบอุปกรณ์ในรายการ'); return; }
+
+  const win = window.open('', '_blank');
+  const items = filtered.map(a => `
+    <div class="qr-item">
+      <div id="qr-${a.assetId.replace(/[^a-zA-Z0-9]/g,'-')}"></div>
+      <b>${a.assetId}</b><br>
+      <span>${a.type || ''}</span><br>
+      <span>${a.building || ''} ${a.location ? '— ' + a.location : ''}</span>
+    </div>`).join('');
+
+  win.document.write(`
+    <html><head><title>QR ทั้งหมด</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>
+      body { font-family: 'Sarabun', sans-serif; }
+      .grid { display:flex; flex-wrap:wrap; gap:8px; padding:16px; }
+      .qr-item { border:1px solid #ccc; border-radius:6px; padding:10px; text-align:center;
+                 width:160px; font-size:0.75rem; break-inside:avoid; }
+      .qr-item b { font-size:0.85rem; display:block; margin:6px 0 2px; }
+      @media print { body { margin:0; } }
+    </style></head>
+    <body><div class="grid">${items}</div>
+    <script>
+      const assets = ${JSON.stringify(filtered)};
+      assets.forEach(a => {
+        const el = document.getElementById('qr-' + a.assetId.replace(/[^a-zA-Z0-9]/g,'-'));
+        if (el) new QRCode(el, { text: a.assetId, width: 120, height: 120 });
+      });
+      setTimeout(() => window.print(), 1200);
+    <\/script></body></html>`);
+  win.document.close();
+};
+
+// เรียก render เมื่อเข้า tab history
+const _origSwitchTab = window.switchTab;
 
 // ==========================================
 // 8. การสำรองข้อมูลและการโอนย้าย (Backup & Migration)
@@ -1073,55 +1633,50 @@ window.importSystemData = function(event) {
 };
 
 // ==========================================
-// 9. ระบบจัดการผู้ใช้และระดับสิทธิ์ (RBAC) & ผู้ดูแลระบบ (Admin)
+// 9. ระบบจัดการผู้ใช้และระดับสิทธิ์ (RBAC) — ดึงจาก Firestore
 // ==========================================
-const DEFAULT_SYSTEM_USERS = [
-  {
-    name: "ผู้ดูแลระบบไอทีและอาคาร",
-    dept: "ศูนย์สารสนเทศและเทคโนโลยี รพ.พยุหะคีรี",
-    email: "admin@pyuhahospital.go.th",
-    password: "admin1234",
-    role: "admin",
-    verified: true,
-    createdAt: "2026-09-01T08:00:00.000Z"
-  },
-  {
-    name: "นายสุวิทย์ พวงสมบัติ",
-    dept: "นายช่างเทคนิค",
-    email: "suwit@pyuhahospital.go.th",
-    password: "123456",
-    role: "inspector",
-    verified: true,
-    createdAt: "2026-09-01T08:30:00.000Z"
-  },
-  {
-    name: "นางสาวศิริพรรณ ชมพูภู่",
-    dept: "ผู้อำนวยการโรงพยาบาลพยุหะคีรี",
-    email: "director@pyuhahospital.go.th",
-    password: "123456",
-    role: "executive",
-    verified: true,
-    createdAt: "2026-09-01T09:00:00.000Z"
-  }
-];
 
-function getStoredUsers() {
+// cache users ที่โหลดมาจาก Firestore ไว้ใน memory
+let _cachedUsers = null;
+
+// โหลด users จาก Firestore (เรียกครั้งแรก หรือเมื่อต้องการ refresh)
+async function loadUsersFromFirestore() {
+  if (!isFirebaseReady() || !db) return [];
   try {
-    const raw = localStorage.getItem('pyh_system_users');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    console.warn("Error reading users from localStorage", e);
+    const snapshot = await getDocs(collection(db, "system_users"));
+    const users = [];
+    snapshot.forEach(d => users.push({ id: d.id, ...d.data() }));
+    _cachedUsers = users;
+    return users;
+  } catch(e) {
+    console.warn("Cannot load users from Firestore:", e.message);
+    return [];
   }
-  localStorage.setItem('pyh_system_users', JSON.stringify(DEFAULT_SYSTEM_USERS));
-  return DEFAULT_SYSTEM_USERS;
 }
 
-function saveStoredUsers(users) {
-  localStorage.setItem('pyh_system_users', JSON.stringify(users));
+// ดึง users (จาก cache ถ้ามีแล้ว, ถ้าไม่มีให้ return [] และโหลด async)
+function getStoredUsers() {
+  if (_cachedUsers !== null) return _cachedUsers;
+  // ถ้ายังไม่มี cache ให้ return [] ไปก่อน แล้วโหลด async
+  loadUsersFromFirestore().then(users => { _cachedUsers = users; });
+  return [];
 }
+
+// บันทึก users กลับขึ้น Firestore
+async function saveStoredUsers(users) {
+  _cachedUsers = users; // อัปเดต cache ทันที
+  if (!isFirebaseReady() || !db) return;
+  // เขียนทีละ doc ด้วย email เป็น ID
+  for (const u of users) {
+    try {
+      const docId = u.email.replace(/[^a-zA-Z0-9]/g, '_');
+      await setDoc(doc(db, "system_users", docId), u);
+    } catch(e) {
+      console.warn("Failed to save user to Firestore:", e.message);
+    }
+  }
+}
+
 
 window.openAuthModal = function() {
   const modal = document.getElementById('auth-modal');
@@ -1286,6 +1841,7 @@ window.registerUser = async function() {
 
 // ฟังก์ชันสำหรับแอดมิน: สร้างช่างคนใหม่ พร้อมเปิดใช้งานทันที
 window.adminCreateTechnician = function() {
+  if (!requireLogin('จัดการบัญชีผู้ใช้')) return;
   const nameEl = document.getElementById('admin-tech-name');
   const deptEl = document.getElementById('admin-tech-dept');
   const emailEl = document.getElementById('admin-tech-email');

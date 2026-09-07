@@ -19,6 +19,62 @@
 </head>
 <body>
 
+  <!-- ============================================== -->
+  <!-- หน้าจอ Login Guard (บังคับ login ก่อนเข้าใช้) -->
+  <!-- ============================================== -->
+  <div id="login-screen" style="
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #004d40 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Sarabun', sans-serif;
+  ">
+    <div style="
+      background: white; border-radius: 16px; padding: 40px 36px;
+      width: 100%; max-width: 400px; box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+      text-align: center;
+    ">
+      <!-- Logo / Header -->
+      <div style="font-size: 3rem; margin-bottom: 8px;">🏥🔒</div>
+      <h2 style="margin: 0 0 4px; color: #0f172a; font-size: 1.3rem;">รพ.พยุหะคีรี</h2>
+      <p style="margin: 0 0 24px; color: #64748b; font-size: 0.9rem;">Fire & Safety Cloud — กรุณาเข้าสู่ระบบ</p>
+
+      <!-- Error message -->
+      <div id="login-screen-error" style="
+        display: none; background: #fef2f2; border: 1px solid #fca5a5;
+        color: #dc2626; padding: 10px; border-radius: 8px;
+        margin-bottom: 16px; font-size: 0.85rem;
+      "></div>
+
+      <!-- Form -->
+      <div style="text-align: left;">
+        <label style="font-size: 0.85rem; color: #374151; font-weight: 600;">อีเมล</label>
+        <input id="ls-email" type="email" placeholder="กรอกอีเมล" style="
+          width: 100%; padding: 10px 12px; margin: 6px 0 14px;
+          border: 1px solid #d1d5db; border-radius: 8px;
+          font-size: 0.95rem; font-family: 'Sarabun', sans-serif;
+          box-sizing: border-box; outline: none;
+        ">
+        <label style="font-size: 0.85rem; color: #374151; font-weight: 600;">รหัสผ่าน</label>
+        <input id="ls-pwd" type="password" placeholder="กรอกรหัสผ่าน" style="
+          width: 100%; padding: 10px 12px; margin: 6px 0 20px;
+          border: 1px solid #d1d5db; border-radius: 8px;
+          font-size: 0.95rem; font-family: 'Sarabun', sans-serif;
+          box-sizing: border-box; outline: none;
+        ">
+        <button id="ls-submit-btn" onclick="loginScreenSubmit()" style="
+          width: 100%; padding: 12px; background: #004d40; color: white;
+          border: none; border-radius: 8px; font-size: 1rem;
+          font-family: 'Sarabun', sans-serif; font-weight: 600;
+          cursor: pointer; transition: background 0.2s;
+        ">🔑 เข้าสู่ระบบ</button>
+      </div>
+      <p style="margin-top: 20px; font-size: 0.78rem; color: #94a3b8;">
+        ระบบนี้สำหรับเจ้าหน้าที่ รพ.พยุหะคีรี เท่านั้น<br>
+        ติดต่อ Admin หากยังไม่มีบัญชี
+      </p>
+    </div>
+  </div>
+
   <!-- แถบระบุผู้ใช้งาน & ออกจากระบบ -->
   <div class="user-bar" id="user-bar">
     <div>
@@ -45,7 +101,8 @@
       <button id="tab-nav-dashboard" onclick="switchTab('dashboard')" class="tab-btn active">📊 แดชบอร์ด & แผนผัง</button>
       <button id="tab-nav-scanner" onclick="switchTab('scanner')" class="tab-btn">📷 สแกนตรวจเช็ก</button>
       <button id="tab-nav-register" onclick="switchTab('register')" class="tab-btn">➕ ลงทะเบียนอุปกรณ์</button>
-      <button id="tab-nav-history" onclick="switchTab('history')" class="tab-btn">📋 ประวัติการตรวจ</button>
+      <button id="tab-nav-assets" onclick="switchTab('assets')" class="tab-btn">🏷️ รายการอุปกรณ์ (QR)</button>
+      <button id="tab-nav-history" onclick="switchTab('history')" class="tab-btn">📋 บันทึกประวัติการตรวจ</button>
       <button id="tab-nav-report" onclick="switchTab('report')" class="tab-btn">📑 สรุปรายงานเสนอผู้บริหาร</button>
       <button id="tab-nav-backup" onclick="switchTab('backup')" class="tab-btn" style="display:none;">💾 สำรองและย้ายข้อมูล</button>
       <button id="tab-nav-admin" onclick="switchTab('admin')" class="tab-btn" style="display:none; background:#0f172a; border-color:#334155;">👨‍💼 จัดการช่าง (Admin)</button>
@@ -112,6 +169,17 @@
         <p style="font-size:0.82rem; color:#64748b; margin-top:8px;">
           * จุดสีเขียว = อุปกรณ์พร้อมใช้งาน | จุดสีแดง = ชำรุด/รอแก้ไข | คลิกที่จุดเพื่อดูรายละเอียดและกดบันทึกตรวจเช็กทันที
         </p>
+
+        <!-- รายการอุปกรณ์และลำดับประจำโซน/อาคารนี้ (Quick Asset Index List) -->
+        <div id="dashboard-asset-quicklist-container" style="margin-top:16px; border-top:1px dashed #e2e8f0; padding-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="margin:0; font-size:0.95rem; color:#1e293b;">📌 ลำดับอุปกรณ์ในอาคาร/โซนนี้ (<span id="dashboard-zone-count">0</span> จุด)</h4>
+            <span style="font-size:0.75rem; color:#64748b;">คลิกที่การ์ดเพื่อเล็งตำแหน่งบนผังทันที 🎯</span>
+          </div>
+          <div id="dashboard-asset-chips" style="display:flex; flex-wrap:wrap; gap:8px; max-height:160px; overflow-y:auto; padding:4px;">
+            <!-- รายการปุ่มลำดับอุปกรณ์จะแสดงที่นี่ -->
+          </div>
+        </div>
       </div>
 
     </section>
@@ -216,12 +284,15 @@
         <form id="reg-form">
           <div class="form-group-row">
             <div>
-              <label>รหัสอุปกรณ์ (Asset ID):</label>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="margin:0;">รหัสอุปกรณ์ (Asset ID):</label>
+                <span id="reg-id-auto-badge" style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡ รันต่ออัตโนมัติ</span>
+              </div>
               <input type="text" id="reg-id" placeholder="เช่น PYH-FE-ER1-09 หรือ PYH-EM-ER1-06" required>
             </div>
             <div>
               <label>ประเภทอุปกรณ์:</label>
-              <select id="reg-type" required>
+              <select id="reg-type" onchange="autoSuggestRegisterId()" required>
                 <option value="ถังดับเพลิงสีเขียว (Clean Agent)">ถังดับเพลิงสีเขียว (Clean Agent / Non-CFC)</option>
                 <option value="ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)">ถังดับเพลิงสีแดง (เคมีแห้ง / CO2)</option>
                 <option value="ไฟฉุกเฉิน (Emergency Light)">ไฟฉุกเฉิน (Emergency Light)</option>
@@ -232,7 +303,7 @@
           <div class="form-group-row">
             <div>
               <label>อาคาร / ตึก:</label>
-              <select id="reg-building-select" onchange="updateRegisterMapFloor()" required>
+              <select id="reg-building-select" onchange="updateRegisterMapFloor(); autoSuggestRegisterId();" required>
                 <option value="building_er_lower">อาคารอุบัติเหตุ (ชั้นล่าง)</option>
                 <option value="building_er_upper">อาคารอุบัติเหตุ (ชั้นบน)</option>
                 <option value="building_hpc">อาคารส่งเสริมสุขภาพ</option>
@@ -280,18 +351,136 @@
     </section>
 
     <!-- ============================================== -->
-    <!-- TAB 4: ประวัติการตรวจ (Inspection History) -->
+    <!-- TAB 4: รายการอุปกรณ์และ QR Code (Asset List) -->
+    <!-- ============================================== -->
+    <section id="tab-assets" class="tab-content">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0;">🏷️ ทะเบียนอุปกรณ์ความปลอดภัยทั้งหมด</h3>
+            <p style="font-size:0.85rem; color:#64748b; margin:4px 0 0;">
+              คลิกดูประวัติการตรวจเช็กเฉพาะอุปกรณ์นั้น ๆ หรือสั่งพิมพ์สติกเกอร์ QR Code ประจำจุด
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <select id="asset-sort" onchange="renderAssetListTable()"
+              style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; background:white;">
+              <option value="default">🔢 เรียงตามลำดับเดิม</option>
+              <option value="issue-first">⚠️ ชำรุด/แจ้งซ่อม ก่อน</option>
+              <option value="building">🏢 แยกตามอาคาร</option>
+              <option value="id">🏷️ เรียงตามรหัส (A-Z)</option>
+            </select>
+            <input id="asset-search" type="text" placeholder="🔍 ค้นหารหัส / จุดติดตั้ง..."
+              oninput="renderAssetListTable()"
+              style="padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; min-width:180px;">
+            <button onclick="printAllQR()" style="background:#0284c7; color:white; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; cursor:pointer;">
+              🖨️ พิมพ์ QR ทั้งหมด
+            </button>
+          </div>
+        </div>
+        <div class="table-responsive" style="margin-top:14px;">
+          <table id="asset-list-table">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;">#</th>
+                <th>รหัสอุปกรณ์</th>
+                <th>ประเภท</th>
+                <th>อาคาร / จุดติดตั้ง</th>
+                <th>สถานะ</th>
+                <th style="text-align:center;">ประวัติการตรวจ</th>
+                <th style="text-align:center;">QR Code</th>
+                <th style="text-align:center;">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="asset-list-rows">
+              <tr><td colspan="8" style="text-align:center; color:#64748b; padding:20px;">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal ดูประวัติการตรวจสอบเฉพาะอุปกรณ์นั้น ๆ (Per-Asset History Modal) -->
+    <div id="asset-history-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8500; align-items:center; justify-content:center; padding:16px;">
+      <div style="background:white; border-radius:16px; width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.4);">
+        <!-- Modal Header -->
+        <div style="padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-radius:16px 16px 0 0;">
+          <div>
+            <h3 id="asset-modal-title" style="margin:0; font-size:1.15rem; color:#0f172a;">📜 ประวัติการตรวจเช็ก</h3>
+            <p id="asset-modal-subtitle" style="margin:2px 0 0; font-size:0.83rem; color:#64748b;"></p>
+          </div>
+          <button onclick="closeAssetHistoryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b; line-height:1;">✕</button>
+        </div>
+        <!-- Modal Body (ตารางประวัติ) -->
+        <div style="padding:20px 24px; overflow-y:auto; flex:1;">
+          <div class="table-responsive">
+            <table style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:40px; text-align:center;">#</th>
+                  <th>วัน-เวลาที่ตรวจ</th>
+                  <th>ผู้ตรวจเช็ก</th>
+                  <th>ผลตรวจ</th>
+                  <th>หลักฐาน</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="asset-history-modal-rows">
+                <!-- รายการประวัติของอุปกรณ์ชิ้นนี้ -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Modal Footer -->
+        <div style="padding:14px 24px; border-top:1px solid #e2e8f0; text-align:right; background:#f8fafc; border-radius:0 0 16px 16px;">
+          <button onclick="closeAssetHistoryModal()" class="btn-secondary" style="margin:0; padding:7px 18px;">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal แสดง QR ขนาดใหญ่ -->
+    <div id="qr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8000; align-items:center; justify-content:center;">
+      <div style="background:white; border-radius:16px; padding:32px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+        <h3 id="qr-modal-title" style="margin:0 0 16px; font-size:1.1rem; color:#0f172a;">QR Code</h3>
+        <div id="qr-modal-canvas" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
+        <p id="qr-modal-label" style="font-size:0.85rem; color:#475569; margin:0 0 20px;"></p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button onclick="downloadQR()" style="background:#00695c; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">⬇️ บันทึกภาพ</button>
+          <button onclick="printQRModal()" style="background:#0284c7; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">🖨️ พิมพ์</button>
+          <button onclick="closeQRModal()" style="background:#e2e8f0; color:#374151; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">✕ ปิด</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 5: บันทึกประวัติการตรวจทั้งหมด (Audit Trail) -->
     <!-- ============================================== -->
     <section id="tab-history" class="tab-content">
       <div class="card">
-        <h3>📋 บันทึกประวัติการตรวจสอบย้อนหลัง (Audit Trail)</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-top:0;">
-          แสดงรายการตรวจสอบล่าสุด เพื่อการติดตามและตรวจประเมินคุณภาพโรงพยาบาล (HA)
-        </p>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <h3 style="margin:0;">📋 สมุดบันทึกประวัติการตรวจสอบทั้งหมด (Audit Trail)</h3>
+            <p style="font-size:0.82rem; color:#64748b; margin:4px 0 0;">
+              ประวัติการตรวจเช็กทุกจุดของโรงพยาบาลพยุหะคีรี เพื่อการติดตามและตรวจรับรองมาตรฐาน HA
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <select id="history-filter-status" onchange="renderHistoryTable()"
+              style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; background:white;">
+              <option value="">🔍 ทุกสถานะ</option>
+              <option value="READY">✅ ปกติเท่านั้น</option>
+              <option value="ISSUE">⚠️ ชำรุดเท่านั้น</option>
+            </select>
+            <input id="history-search" type="text" placeholder="ค้นหารหัสอุปกรณ์..."
+              oninput="renderHistoryTable()"
+              style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; width:160px;">
+          </div>
+        </div>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
+                <th style="width:40px; text-align:center;">#</th>
                 <th>วัน-เวลา</th>
                 <th>รหัสอุปกรณ์</th>
                 <th>ผู้ตรวจเช็ก</th>
@@ -307,6 +496,7 @@
         </div>
       </div>
     </section>
+
 
     <!-- ============================================== -->
     <!-- TAB 5: สำรองและโอนย้ายข้อมูล (Backup & Migration) -->
@@ -605,8 +795,11 @@
           </div>
 
           <div class="auth-field-group">
-            <label for="quick-add-id">🏷️ รหัสประจำอุปกรณ์ (Asset ID):</label>
-            <input type="text" id="quick-add-id" class="auth-input" placeholder="เช่น PYH-FE-26" required>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label for="quick-add-id" style="margin:0;">🏷️ รหัสประจำอุปกรณ์ (Asset ID):</label>
+              <span id="quick-add-id-auto-badge" style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡ รันต่ออัตโนมัติ</span>
+            </div>
+            <input type="text" id="quick-add-id" class="auth-input" placeholder="เช่น PYH-FE-ER1-09" required>
           </div>
 
           <div class="auth-field-group">
@@ -630,6 +823,6 @@
   <!-- แจ้งเตือนสถานะการย้ายพิกัดหมุด (Admin Map Toast) -->
   <div id="map-toast-notification" class="map-toast"></div>
 
-  <script type="module" src="app.js?v=2.3"></script>
+  <script type="module" src="app.js?v=2.4"></script>
 </body>
 </html>

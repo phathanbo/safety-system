@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Seed Users to Firestore</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 60px auto; padding: 20px; background: #f8fafc; }
+    .log { background: #1e293b; color: #a3e635; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; line-height: 1.6; min-height: 150px; white-space: pre-wrap; }
+    button { background: #004d40; color: white; padding: 12px 28px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 16px; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    .warn { background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; color: #92400e; }
+  </style>
+</head>
+<body>
+  <h2>Seed Users to Firestore</h2>
+  <div class="warn">ใช้ไฟล์นี้เพียง <strong>ครั้งเดียว</strong> แล้วลบทิ้ง!</div>
+  <div class="log" id="log">รอกดปุ่ม...</div>
+  <button id="btn" onclick="seedUsers()">อัปโหลด Users</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCyfdacNzBWR8MLQQ-JPQyDa80MuEo2xAM",
+    authDomain: "emergency-check-system.firebaseapp.com",
+    projectId: "emergency-check-system",
+    storageBucket: "emergency-check-system.firebasestorage.app",
+    messagingSenderId: "244835888874",
+    appId: "1:244835888874:web:015cc54899dab4c4f3f193"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const USERS = [
+    { name: "ผู้ดูแลระบบไอทีและอาคาร", dept: "ศูนย์สารสนเทศและเทคโนโลยี รพ.พยุหะคีรี", email: "admin@pyuhahospital.go.th", password: "Admin@Pyuha2026!", role: "admin", verified: true, createdAt: new Date().toISOString() },
+    { name: "นายสุวิทย์ พวงสมบัติ", dept: "นายช่างเทคนิค", email: "suwit@pyuhahospital.go.th", password: "Suwit@2026!", role: "inspector", verified: true, createdAt: new Date().toISOString() },
+    { name: "นางสาวศิริพรรณ ชมพูภู่", dept: "ผู้อำนวยการโรงพยาบาลพยุหะคีรี", email: "director@pyuhahospital.go.th", password: "Director@2026!", role: "executive", verified: true, createdAt: new Date().toISOString() }
+  ];
+
+  const log = (msg) => { document.getElementById("log").textContent += msg + "\n"; };
+
+  window.seedUsers = async function() {
+    const btn = document.getElementById("btn");
+    btn.disabled = true;
+    document.getElementById("log").textContent = "";
+    log("เริ่มอัปโหลด...\n");
+    let ok = 0;
+    for (const u of USERS) {
+      try {
+        const id = u.email.replace(/[^a-zA-Z0-9]/g, "_");
+        await setDoc(doc(db, "system_users", id), u);
+        log("OK: " + u.name + " (" + u.email + ")");
+        ok++;
+      } catch(e) { log("ERR: " + u.email + " - " + e.message); }
+    }
+    log("\nเสร็จ " + ok + "/" + USERS.length + " บัญชี");
+    log("ลบไฟล์ seed-users.html หลังจากนี้!");
+    btn.textContent = "เสร็จแล้ว";
+  };
+</script>
+</body>
+</html>

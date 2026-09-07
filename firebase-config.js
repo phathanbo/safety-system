@@ -14,21 +14,24 @@ import {
   onAuthStateChanged, signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// *** นำค่า config จาก Firebase Console ของท่านมาใส่ตรงนี้ ***
+// *** Firebase Config - emergency-check-system ***
 const firebaseConfig = {
-  apiKey: "AIzaSyYOUR_API_KEY",
-  authDomain: "pyuha-safety.firebaseapp.com",
-  projectId: "pyuha-safety",
-  storageBucket: "pyuha-safety.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef123456"
+  apiKey: "AIzaSyCyfdacNzBWR8MLQQ-JPQyDa80MuEo2xAM",
+  authDomain: "emergency-check-system.firebaseapp.com",
+  databaseURL: "https://emergency-check-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "emergency-check-system",
+  storageBucket: "emergency-check-system.firebasestorage.app",
+  messagingSenderId: "244835888874",
+  appId: "1:244835888874:web:015cc54899dab4c4f3f193",
+  measurementId: "G-SJ41PVF7G6"
 };
 
 // ฟังก์ชันตรวจสอบว่ามีการตั้งค่า Firebase จริงหรือยัง
 export function isFirebaseReady() {
   return firebaseConfig.apiKey && 
          !firebaseConfig.apiKey.includes("YOUR_API_KEY") &&
-         firebaseConfig.projectId !== "pyuha-safety";
+         firebaseConfig.projectId &&
+         firebaseConfig.projectId.length > 0;
 }
 
 let app = null;
