@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>เอกสารนำเสนอผู้บริหาร - ระบบความปลอดภัย รพ.พยุหะคีรี</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @media screen {
+    .screen-toolbar {
+      position: sticky; top: 0; left: 0; right: 0;
+      background: #0f3647; color: white;
+      padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
+      z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .toolbar-btn {
+      background: #38bdf8; color: #0f172a; border: none; font-weight: bold;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; text-decoration: none;
+      font-size: 14px; margin-left: 8px;
+    }
+    .toolbar-btn-sec {
+      background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; text-decoration: none;
+      font-size: 14px;
+    }
+    .doc-wrapper { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+  }
+
+  @media screen and (max-width: 768px) {
+    .screen-toolbar {
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+      padding: 10px 12px;
+    }
+    .screen-toolbar > div {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+    .doc-wrapper {
+      padding: 0 8px;
+      margin: 10px auto;
+    }
+    .header-title {
+      font-size: 14pt !important;
+    }
+    .header-banner {
+      padding: 14px 14px !important;
+    }
+    .table-layout {
+      display: block !important;
+    }
+    .table-layout tr {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+    .table-layout td.col-cell {
+      display: block !important;
+      width: 100% !important;
+      margin-bottom: 8px;
+    }
+    table.data-table {
+      font-size: 8pt !important;
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+
+  @media print {
+    .screen-toolbar { display: none !important; }
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm 12mm 14mm 12mm;
+    background-color: #f8fafc;
+    @bottom-left {
+      content: "โรงพยาบาลพยุหะคีรี • ฝ่ายบริหารจัดการงานซ่อมบำรุงและสุขาภิบาล (งานสิ่งแวดล้อมและความปลอดภัย ENV)";
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+    }
+    @bottom-right {
+      content: "หน้า " counter(page) " / " counter(pages);
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: bold;
+    }
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans Thai', 'Segoe UI', Tahoma, sans-serif;
+    color: #1e293b;
+    line-height: 1.5;
+    background-color: #f8fafc;
+    font-size: 9.8pt;
+  }
+
+  /* Header Banner */
+  .header-banner {
+    background: linear-gradient(135deg, #0f3647 0%, #1e5c78 100%);
+    color: #ffffff;
+    padding: 20px 22px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    border-left: 6px solid #38bdf8;
+  }
+
+  .header-badge {
+    display: inline-block;
+    background: rgba(56, 189, 248, 0.2);
+    border: 1px solid #38bdf8;
+    color: #e0f2fe;
+    font-size: 8pt;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .header-title {
+    margin: 0 0 6px 0;
+    font-size: 17pt;
+    font-weight: bold;
+    color: #ffffff;
+    line-height: 1.3;
+  }
+
+  .header-subtitle {
+    margin: 0;
+    font-size: 10.2pt;
+    color: #cbd5e1;
+    font-weight: normal;
+  }
+
+  .meta-table {
+    width: 100%;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 8.5pt;
+    color: #e2e8f0;
+  }
+
+  .meta-table td {
+    padding: 2px 0;
+  }
+
+  /* Section Styling */
+  h2 {
+    color: #0f3647;
+    font-size: 12.5pt;
+    font-weight: bold;
+    margin: 18px 0 10px 0;
+    padding-left: 10px;
+    border-left: 4px solid #0284c7;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    color: #1e293b;
+    font-size: 10.5pt;
+    font-weight: bold;
+    margin: 12px 0 6px 0;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin: 0 0 8px 0;
+    text-align: justify;
+  }
+
+  /* 2-Column or 3-Column Layout using Tables */
+  .layout-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10px 0;
+    margin: 10px -10px 14px -10px;
+  }
+
+  .col-cell {
+    vertical-align: top;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 6px;
+  }
+  .stat-number {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #0284c7;
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-size: 8pt;
+    color: #64748b;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Custom Callout Box */
+  .callout-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #2563eb;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 10px 0 14px 0;
+    font-size: 9.3pt;
+  }
+
+  .alert-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 10px 0 14px 0;
+    font-size: 9.3pt;
+  }
+
+  .success-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #16a34a;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 10px 0 14px 0;
+    font-size: 9.3pt;
+  }
+
+  /* Structured Data Tables */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    background: #ffffff;
+    font-size: 8.8pt;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+  }
+
+  table.data-table th {
+    background: #0f3647;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #0f3647;
+  }
+
+  table.data-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    color: #334155;
+    vertical-align: middle;
+  }
+
+  table.data-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Badges */
+  .badge-pass {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    background: #dcfce7;
+    color: #15803d;
+  }
+  .badge-fail {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+  .badge-info {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 4px 0 10px 18px;
+    padding: 0;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+
+  .step-container {
+    page-break-inside: avoid;
+    margin-bottom: 8px;
+    border-left: 2px solid #93c5fd;
+    padding-left: 12px;
+  }
+
+  .step-title {
+    font-weight: bold;
+    color: #0369a1;
+    font-size: 9.5pt;
+  }
+
+  .signature-area {
+    page-break-inside: avoid;
+    margin-top: 25px;
+    border-top: 1px dashed #94a3b8;
+    padding-top: 15px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="screen-toolbar">
+    <div>
+      <span style="font-weight: bold; font-size: 15px;">เอกสารนำเสนอผู้บริหาร: รพ.พยุหะคีรี</span>
+    </div>
+    <div>
+      <a href="index.html" class="toolbar-btn-sec">← กลับสู่หน้าหลัก</a>
+      <button onclick="window.print()" class="toolbar-btn">🖨️ สั่งพิมพ์ / บันทึกเป็น PDF (A4)</button>
+    </div>
+  </div>
+
+  <div class="doc-wrapper">
+
+  <!-- Header Section -->
+  <div class="header-banner">
+
+    <div class="header-badge">เอกสารนำเสนอเชิงนโยบายและแผนปฏิบัติการดิจิทัล</div>
+    <div class="header-title">ระบบตรวจสอบและบริหารจัดการอุปกรณ์ระงับอัคคีภัยและไฟฉุกเฉินอัจฉริยะ</div>
+    <div class="header-subtitle">Smart Fire & Emergency Inspection System — Phyuha Khiri Hospital</div>
+    
+    <table class="meta-table">
+      <tr>
+        <td style="width: 25%;"><strong>หน่วยงานนำเสนอ:</strong> งานอาคารสถานที่และสิ่งแวดล้อม (ENV)</td>
+        <td style="width: 25%;"><strong>เรียนเสนอ:</strong> คณะกรรมการบริหารโรงพยาบาลพยุหะคีรี</td>
+        <td style="width: 25%;"><strong>สอดคล้องมาตรฐาน:</strong> HA (Part II ENV) & JCI FMS</td>
+        <td style="width: 25%;"><strong>ต้นทุนซอฟต์แวร์:</strong> 0 บาท (Free Tier Serverless)</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Section 1: Executive Summary -->
+  <h2>1. บทสรุปผู้บริหาร (Executive Summary)</h2>
+  <p>
+    ความปลอดภัยต่ออัคคีภัยและระบบไฟฟ้าฉุกเฉินในสถานพยาบาลถือเป็นเกณฑ์วิกฤติต่อชีวิตของผู้ป่วยและเจ้าหน้าที่ ปัจจุบันโรงพยาบาลพยุหะคีรีมีอุปกรณ์ถังดับเพลิงและโคมไฟฉุกเฉินกระจายอยู่ตามอาคารต่าง ๆ ทั่วบริเวณโรงพยาบาล ซึ่งการตรวจสอบความพร้อมใช้งานตามรอบเดิมใช้ <strong>"ระบบลงบันทึกในใบกระดาษ (Paper Tag)"</strong> ที่หน้าถัง ส่งผลให้เกิดข้อจำกัดสำคัญ 4 ประการ ได้แก่ <em>(1) ความเสี่ยงการบันทึกข้อมูลย้อนหลังโดยไม่ได้เดินตรวจจริง (2) กระดาษชำรุด สูญหาย หรืออ่านไม่ออก (3) เมื่ออุปกรณ์ชำรุดไม่มีระบบแจ้งเตือนช่างซ่อมบำรุงในทันที และ (4) ผู้บริหารขาดหน้าจอ Dashboard สรุปความพร้อมใช้งานแบบ Real-time</em>
+  </p>
+  <p>
+    โครงการนี้จึงพัฒนา <strong>ระบบตรวจสอบอุปกรณ์ความปลอดภัยผ่านเว็บแอปพลิเคชันคลาวด์</strong> โดยอาศัยเทคโนโลยี QR Code ประจำจุด เชื่อมโยงกับผังอาคาร (Floor Plan) และระบบฐานข้อมูล Google Firebase ทำให้เจ้าหน้าที่ต้องสแกนในสถานที่จริง แนบภาพถ่ายยืนยันสถานะ และระบบส่งรายงานสรุปให้ผู้บริหารทราบแบบเรียลไทม์ โดยมีต้นทุนค่าลิขสิทธิ์ซอฟต์แวร์ <strong>0 บาท</strong>
+  </p>
+
+  <!-- Key Metrics 4 Columns -->
+  <table class="layout-table">
+    <tr>
+      <td class="stat-card" style="width: 25%;">
+        <span class="stat-number">100%</span>
+        <span class="stat-label">ความถูกต้องของจุดตรวจ (No Phantom Checks)</span>
+      </td>
+      <td class="stat-card" style="width: 25%;">
+        <span class="stat-number">&lt; 15 นาที</span>
+        <span class="stat-label">ระยะเวลารับแจ้งและเปิดใบงานเมื่อพบชำรุด</span>
+      </td>
+      <td class="stat-card" style="width: 25%;">
+        <span class="stat-number">85%</span>
+        <span class="stat-label">ลดระยะเวลาจัดทำเอกสารรายงานสรุปรายเดือน</span>
+      </td>
+      <td class="stat-card" style="width: 25%;">
+        <span class="stat-number">0 บาท</span>
+        <span class="stat-label">งบประมาณค่า Server & ซอฟต์แวร์รายปี</span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Section 2: Current Problems vs Digital Solutions -->
+  <h2>2. การเปรียบเทียบกระบวนการทำงาน (Before vs. After Transformation)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 22%;">มิติการประเมิน</th>
+        <th style="width: 39%;">ระบบเดิม (กระดาษเช็กลิสต์ / Manual)</th>
+        <th style="width: 39%;">ระบบใหม่ (Smart Fire & Safety Cloud)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>การยืนยันการตรวจจริง</strong></td>
+        <td>เซ็นชื่อลงบัตรแขวน อาจเกิดการเซ็นล่วงหน้าหรือเซ็นย้อนหลังโดยไม่ได้ตรวจดูสภาพ</td>
+        <td><span class="badge-pass">สแกน QR Code ประจำจุด</span> + บันทึกเวลา Stamp และชื่อผู้ตรวจผ่าน Cloud อัตโนมัติ</td>
+      </tr>
+      <tr>
+        <td><strong>หลักฐานการชำรุด</strong></td>
+        <td>ระบุข้อความสั้น ๆ ลงกระดาษ ช่างไม่เห็นสภาพจริง ทำให้เตรียมอะไหล่ไม่ถูกต้อง</td>
+        <td><span class="badge-pass">ถ่ายภาพความละเอียดสูง</span> บันทึกลง Cloud Storage ทันที ช่างเห็นปัญหาชัดเจน</td>
+      </tr>
+      <tr>
+        <td><strong>การแจ้งเหตุชำรุด</strong></td>
+        <td>รอจนเจ้าหน้าที่เดินตรวจเสร็จ แล้วจึงเดินไปแจ้งช่างซ่อมบำรุง หรือรอรอบสรุปสิ้นเดือน</td>
+        <td><span class="badge-pass">Realtime Alert</span> อัปเดตสถานะเป็น "ชำรุด (ISSUE)" บน Dashboard ทันที</td>
+      </tr>
+      <tr>
+        <td><strong>การนำทางและจุดตรวจ</strong></td>
+        <td>อาศัยความจำของเจ้าหน้าที่ อาจตรวจตกหล่นในห้องลับตา หรือพื้นที่ห่างไกล</td>
+        <td><span class="badge-pass">Interactive Floor Map</span> แผนผังปักหมุดสีเขียว/แดง นำทางตามเส้นทางเดิน</td>
+      </tr>
+      <tr>
+        <td><strong>การรายงานผู้บริหาร / HA</strong></td>
+        <td>ต้องพิมพ์รวบรวมข้อมูลลง Excel ใช้เวลา 3-5 วันก่อนการประชุมหรือรอบตรวจประเมิน</td>
+        <td><span class="badge-pass">One-Click Report</span> ออกรายงานสถิติ พร้อมใช้งานรับการตรวจประเมิน HA ได้ทันที</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Section 3: System Architecture -->
+  <h2>3. โครงสร้างสถาปัตยกรรมทางเทคนิค (Technical Architecture)</h2>
+  <div class="callout-box">
+    <strong>การออกแบบเชิงสถาปัตยกรรมแบบ Serverless:</strong> ระบบทำงานบนเว็บเบราว์เซอร์มาตรฐาน (Responsive Web) เจ้าหน้าที่สามารถใช้สมาร์ตโฟนที่มีกล้องเปิดใช้งานได้ทันทีโดยไม่ต้องดาวน์โหลดแอปพลิเคชันจาก App Store หรือ Play Store รองรับทั้งระบบปฏิบัติการ Android, iOS และเครื่องคอมพิวเตอร์สำนักงาน
+  </div>
+
+  <table class="layout-table">
+    <tr>
+      <td class="col-cell" style="width: 33.33%;">
+        <h3 style="color: #0284c7; margin-top:0;">1. ส่วนผู้ใช้งาน (Frontend)</h3>
+        <ul>
+          <li><strong>โฮสติ้ง:</strong> GitHub Pages ให้บริการ Web Hosting ความปลอดภัยสูงด้วย HTTPS ฟรี</li>
+          <li><strong>QR Code Engine:</strong> ระบบถอดรหัสภาพผ่านกล้องมือถือ (html5-qrcode)</li>
+          <li><strong>Interactive Map:</strong> แสดงผังอาคารจำลองด้วย Leaflet.js ปักหมุดพิกัดอุปกรณ์</li>
+        </ul>
+      </td>
+      <td class="col-cell" style="width: 33.33%;">
+        <h3 style="color: #0284c7; margin-top:0;">2. คลาวด์ฐานข้อมูล (Backend)</h3>
+        <ul>
+          <li><strong>Cloud Firestore:</strong> จัดเก็บข้อมูลอุปกรณ์ (Assets) และประวัติการตรวจ (Inspection Logs) แบบ NoSQL Realtime</li>
+          <li><strong>Cloud Storage:</strong> จัดเก็บภาพถ่ายสภาพถังดับเพลิงและไฟฉุกเฉินที่พบปัญหา</li>
+          <li><strong>Security Rules:</strong> กำหนดสิทธิ์การเขียนอ่านเฉพาะผู้รับผิดชอบ</li>
+        </ul>
+      </td>
+      <td class="col-cell" style="width: 33.33%;">
+        <h3 style="color: #0284c7; margin-top:0;">3. สรุปผลและกำกับดูแล</h3>
+        <ul>
+          <li><strong>Executive Dashboard:</strong> แสดงสัดส่วนความพร้อมใช้งาน (%) อัตราการเข้าตรวจ</li>
+          <li><strong>Maintenance Queue:</strong> ตารางคัดกรองอุปกรณ์ชำรุดสำหรับฝ่ายช่างซ่อมบำรุง</li>
+          <li><strong>Audit Trail:</strong> ตรวจสอบย้อนหลังได้ทุกชิ้น ไม่สามารถลบประวัติการตรวจได้</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Section 4: Workflow -->
+  <h2>4. ขั้นตอนและกระบวนการปฏิบัติงาน (4-Step Workflow)</h2>
+  <div class="step-container">
+    <div class="step-title">ขั้นตอนที่ 1: การลงทะเบียนอุปกรณ์และติดรหัสประจำจุด (Asset Onboarding)</div>
+    <p>
+      เจ้าหน้าที่เทคนิคทำการบันทึกรหัสอุปกรณ์ (เช่น <code>PYH-FE-OPD-001</code>), ประเภทอุปกรณ์, ตึก, ชั้น, และระบุพิกัดบนแผนผัง ระบบจะสร้างภาพ <strong>QR Code Sticker</strong> พร้อมพิมพ์ลงสติกเกอร์ชนิดกันน้ำเพื่อนำไปติดตั้งที่ตัวถังดับเพลิงและโคมไฟฉุกเฉิน
+    </p>
+  </div>
+
+  <div class="step-container">
+    <div class="step-title">ขั้นตอนที่ 2: การเดินตรวจตามแผนที่นำทาง (Patrol Inspection via Map)</div>
+    <p>
+      เจ้าหน้าที่เปิดมือถือเพื่อดู <strong>Interactive Floor Map</strong> ระบบจะแสดงหมุดตำแหน่งอุปกรณ์ทั้งหมดในอาคาร หมุดสีเขียวคือตรวจแล้วในรอบปัจจุบัน ส่วนหมุดสีเทาคืออุปกรณ์ที่รอดำเนินการ ทำให้ไม่เกิดการเดินวนหรือตกหล่น
+    </p>
+  </div>
+
+  <div class="step-container">
+    <div class="step-title">ขั้นตอนที่ 3: การสแกนตรวจสอบและถ่ายภาพยืนยัน (Digital Check & Photo Proof)</div>
+    <p>
+      เมื่อถึงจุดติดตั้ง สแกน QR Code เพื่อเปิดแบบฟอร์มตรวจสอบมาตรฐาน ทำการทดสอบเกจวัดแรงดัน, สายฉีด, คันบีบ หรือกดปุ่ม Test ไฟฉุกเฉิน หากพบสิ่งผิดปกติ <em>ระบบจะเปิดกล้องให้ถ่ายภาพความเสียหายทันที</em> ข้อมูลจะถูกอัปโหลดขึ้น Firebase แบบ Real-time
+    </p>
+  </div>
+
+  <div class="step-container">
+    <div class="step-title">ขั้นตอนที่ 4: การสรุปสถานะและรายงานผู้บริหาร (Executive Reporting)</div>
+    <p>
+      ข้อมูลประมวลผลขึ้น Dashboard ผู้บริหารทันที แสดงอัตราความพร้อมของอุปกรณ์ในโรงพยาบาล หากมีถังแรงดันตกหรือแบตเตอรี่ไฟฉุกเฉินเสื่อม ระบบจะแสดงในรายการเฝ้าระวังสีแดงเพื่อให้ฝ่ายช่างเข้าดำเนินการแก้ไขตามกำหนดเวลา SLA
+    </p>
+  </div>
+
+  <!-- Section 5: Standard Checklist Protocols -->
+  <h2>5. เกณฑ์การตรวจสอบมาตรฐานความปลอดภัย (Standardized Protocols)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">ประเภทอุปกรณ์</th>
+        <th style="width: 45%;">เกณฑ์มาตรฐานที่ระบบตรวจสอบ (Inspection Criteria)</th>
+        <th style="width: 30%;">แนวทางปฏิบัติเมื่อพบความผิดปกติ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ถังดับเพลิง<br>(Fire Extinguisher)</strong></td>
+        <td>
+          1. เข็มเกจวัดแรงดันอยู่ในแถบสีเขียว (Ready)<br>
+          2. สลักล็อกและซีลพลาสติก (Safety Seal) อยู่ในสภาพสมบูรณ์<br>
+          3. สายฉีดไม่แตกลายงา คันบีบไม่คดงอหรือเป็นสนิม<br>
+          4. ไม่มีสิ่งของวางกีดขวางในระยะ 1 เมตร
+        </td>
+        <td>
+          ถ่ายรูปเกจ/จุดชำรุด บันทึกระบบเป็น <span class="badge-fail">ชำรุด (FAIL)</span> ช่างนำถังสำรองมาเปลี่ยนแทนทันที และส่งถังเดิมไปอัดบรรจุใหม่
+        </td>
+      </tr>
+      <tr>
+        <td><strong>ไฟฉุกเฉิน<br>(Emergency Light)</strong></td>
+        <td>
+          1. ไฟ LED แสดงสถานะไฟเข้า (AC Power) ติดสว่าง<br>
+          2. ทดสอบกดปุ่ม Test โคมไฟสว่างทั้งสองดวงไม่น้อยกว่า 30 วินาที<br>
+          3. สภาพสายไฟ ปลั๊กเสียบ และโคมไม่มีรอยแตกร้าว<br>
+          4. องศาการส่องสว่างชี้ไปตามแนวเส้นทางหนีไฟ
+        </td>
+        <td>
+          ถ่ายรูปสภาพหลอดไฟหรือแบตเตอรี่ บันทึก <span class="badge-fail">ชำรุด (FAIL)</span> ช่างดำเนินการตรวจสอบชุด Battery หรือหลอด LED ภายใน 24 ชม.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Section 6: Benefits & Impact -->
+  <h2>6. ประโยชน์และความคุ้มค่าต่อโรงพยาบาลพยุหะคีรี (Hospital Value & Impact)</h2>
+  <table class="layout-table">
+    <tr>
+      <td class="col-cell" style="width: 50%;">
+        <h3 style="color: #16a34a; margin-top:0;">🛡️ ด้านความปลอดภัยและการรับรองมาตรฐาน HA / JCI</h3>
+        <ul>
+          <li><strong>ความพร้อมในภาวะวิกฤต:</strong> รับประกันว่าอุปกรณ์ดับเพลิงและไฟฉุกเฉินทุกชิ้นพร้อมทำงาน 100% เมื่อเกิดเหตุเพลิงไหม้หรือไฟฟ้าดับ</li>
+          <li><strong>ผ่านเกณฑ์การประเมินมาตรฐาน HA:</strong> มีระบบกำกับดูแลสิ่งแวดล้อมทางกายภาพและความปลอดภัย (ENV) ที่มีหลักฐานตรวจสอบย้อนหลังได้ชัดเจน</li>
+          <li><strong>ป้องกันข้อผิดพลาดจากมนุษย์:</strong> หมดปัญหาการลืมตรวจจุดอับ หรือการบันทึกข้อมูลเท็จ</li>
+        </ul>
+      </td>
+      <td class="col-cell" style="width: 50%;">
+        <h3 style="color: #0284c7; margin-top:0;">⚙️ ด้านประสิทธิภาพการบริหารจัดการและงบประมาณ</h3>
+        <ul>
+          <li><strong>ประหยัดงบประมาณภาครัฐ:</strong> ไม่ต้องจัดซื้อระบบสำเร็จรูปที่มีค่า License หลักแสนบาทต่อปี อาศัยระบบ Cloud ฟรีสำหรับโรงพยาบาล</li>
+          <li><strong>ลดการใช้กระดาษ (Paperless):</strong> ยกเลิกการพิมพ์บัตรบันทึกและแบบฟอร์มกระดาษ ประหยัดทรัพยากรตามนโยบาย Green Hospital</li>
+          <li><strong>วางแผนงบประมาณแม่นยำ:</strong> ผู้บริหารทราบอายุการใช้งานและรอบการเสื่อมสภาพของอุปกรณ์ ทำให้ตั้งงบเปลี่ยนสารเคมีหรือแบตเตอรี่ได้ล่วงหน้า</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Section 7: Implementation Roadmap -->
+  <h2>7. แผนงานการติดตั้งและเริ่มใช้งาน (4-Week Rollout Roadmap)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 15%;">ระยะเวลา</th>
+        <th style="width: 40%;">กิจกรรมสำคัญ (Key Milestones)</th>
+        <th style="width: 25%;">ผู้รับผิดชอบหลัก</th>
+        <th style="width: 20%;">ผลสัมฤทธิ์ (Deliverables)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>สัปดาห์ที่ 1</strong></td>
+        <td>สำรวจนับยอดอุปกรณ์ทั้งหมด กำหนดรหัส และติดตั้งฐานข้อมูล Firebase + GitHub</td>
+        <td>ทีมงานไอที + งานซ่อมบำรุง</td>
+        <td>ฐานข้อมูลอุปกรณ์ครบ 100%</td>
+      </tr>
+      <tr>
+        <td><strong>สัปดาห์ที่ 2</strong></td>
+        <td>พิมพ์และติดสติกเกอร์ QR Code ประจำอุปกรณ์ทุกจุด พร้อมปักหมุดพิกัดผังอาคาร</td>
+        <td>งานอาคารสถานที่ / ช่าง</td>
+        <td>อุปกรณ์ทุกชิ้นมี QR Code ประจำจุด</td>
+      </tr>
+      <tr>
+        <td><strong>สัปดาห์ที่ 3</strong></td>
+        <td>ทดสอบการเดินตรวจนำร่อง (Pilot Test) ตึกผู้ป่วยนอก (OPD) และอบรมเจ้าหน้าที่</td>
+        <td>งานความปลอดภัย (จป.)</td>
+        <td>เจ้าหน้าที่ผ่านการอบรม 100%</td>
+      </tr>
+      <tr>
+        <td><strong>สัปดาห์ที่ 4</strong></td>
+        <td>เปิดใช้งานจริงเต็มรูปแบบทั่วโรงพยาบาล พร้อมนำเสนอ Dashboard ให้ผู้บริหาร</td>
+        <td>คณะกรรมการ ENV / ผู้บริหาร</td>
+        <td>Go-Live & Full Operation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Section 8: Recommendation & Sign-off -->
+  <div class="signature-area">
+    <h2>8. ข้อพิจารณาเพื่ออนุมัติ (Executive Approval Request)</h2>
+    <div class="success-box">
+      <strong>ข้อเสนอเพื่อพิจารณา:</strong> ขออนุมัติให้ดำเนินโครงการพัฒนาระบบตรวจสอบอุปกรณ์ความปลอดภัยอัคคีภัยและไฟฉุกเฉินดิจิทัล (Smart Fire & Safety Cloud) เพื่อเริ่มดำเนินการจัดทำฐานข้อมูลและติดตั้งสติกเกอร์ QR Code ตามแผนงาน 4 สัปดาห์ โดยไม่มีค่าใช้จ่ายด้านซอฟต์แวร์
+    </div>
+
+    <table style="width: 100%; margin-top: 25px; border-collapse: collapse;">
+      <tr>
+        <td style="width: 50%; text-align: center; vertical-align: top; padding: 0 20px;">
+          <p style="margin-bottom: 45px;">ผู้เสนอโครงการ</p>
+          <p style="margin: 0; font-weight: bold;">( ............................................................ )</p>
+          <p style="margin: 4px 0 0 0; font-size: 8.8pt; color: #475569;">หัวหน้างานอาคารสถานที่และสิ่งแวดล้อม (ENV)<br>โรงพยาบาลพยุหะคีรี</p>
+          <p style="margin: 4px 0 0 0; font-size: 8.5pt; color: #64748b;">วันที่ ........ / ........ / 2569</p>
+        </td>
+        <td style="width: 50%; text-align: center; vertical-align: top; padding: 0 20px;">
+          <p style="margin-bottom: 45px;">ผู้อนุมัติโครงการ</p>
+          <p style="margin: 0; font-weight: bold;">( ............................................................ )</p>
+          <p style="margin: 4px 0 0 0; font-size: 8.8pt; color: #475569;">ผู้อำนวยการโรงพยาบาลพยุหะคีรี<br>&nbsp;</p>
+          <p style="margin: 4px 0 0 0; font-size: 8.5pt; color: #64748b;">วันที่ ........ / ........ / 2569</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+  </div> <!-- /.doc-wrapper -->
+
+</body>
+</html>

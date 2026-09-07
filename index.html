@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบตรวจสอบอุปกรณ์ความปลอดภัย - รพ.พยุหะคีรี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.3">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- QR Code Scanner & Generator -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- แถบระบุผู้ใช้งาน & ออกจากระบบ -->
+  <div class="user-bar" id="user-bar">
+    <div>
+      เข้าสู่ระบบโดย: <b id="display-user-name">-</b> 
+      <span class="role-tag" id="display-user-role">-</span>
+    </div>
+    <div>
+      <a href="executive_presentation.html" target="_blank" class="btn-sm" style="background:#0284c7; color:white; text-decoration:none; margin-right:6px;">📊 เอกสารนำเสนอผู้บริหาร</a>
+      <button onclick="openAuthModal()" class="btn-sm" style="background:#004d40; color:white; margin-right:6px;">🔑 สลับบัญชี / เข้าสู่ระบบ</button>
+      <button onclick="logoutUser()" class="btn-sm btn-danger">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <header>
+    <h1>รพ.พยุหะคีรี - Fire & Safety Cloud</h1>
+    <p>ระบบบริหารจัดการและตรวจเช็กถังดับเพลิงและไฟฉุกเฉินอัจฉริยะ</p>
+    
+    <div class="officer-badge">
+      <span>ผู้ตรวจประจำเวร: <b id="current-officer-name">-</b></span>
+      <button onclick="setOfficerProfile()" class="btn-sm">เปลี่ยนชื่อผู้ตรวจ</button>
+    </div>
+
+    <div class="nav-tabs">
+      <button id="tab-nav-dashboard" onclick="switchTab('dashboard')" class="tab-btn active">📊 แดชบอร์ด & แผนผัง</button>
+      <button id="tab-nav-scanner" onclick="switchTab('scanner')" class="tab-btn">📷 สแกนตรวจเช็ก</button>
+      <button id="tab-nav-register" onclick="switchTab('register')" class="tab-btn">➕ ลงทะเบียนอุปกรณ์</button>
+      <button id="tab-nav-history" onclick="switchTab('history')" class="tab-btn">📋 ประวัติการตรวจ</button>
+      <button id="tab-nav-report" onclick="switchTab('report')" class="tab-btn">📑 สรุปรายงานเสนอผู้บริหาร</button>
+      <button id="tab-nav-backup" onclick="switchTab('backup')" class="tab-btn" style="display:none;">💾 สำรองและย้ายข้อมูล</button>
+      <button id="tab-nav-admin" onclick="switchTab('admin')" class="tab-btn" style="display:none; background:#0f172a; border-color:#334155;">👨‍💼 จัดการช่าง (Admin)</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: แดชบอร์ดและแผนผังอาคาร (Dashboard & Map) -->
+    <!-- ============================================== -->
+    <section id="tab-dashboard" class="tab-content active">
+      
+      <!-- KPI Metric Cards -->
+      <div class="kpi-container">
+        <div class="stat total card">
+          <h4>อุปกรณ์ทั้งหมด</h4>
+          <span id="total-count">0</span>
+        </div>
+        <div class="stat pass card">
+          <h4>พร้อมใช้งาน (Ready)</h4>
+          <span id="ready-count">0</span>
+        </div>
+        <div class="stat fail card">
+          <h4>ชำรุด / แจ้งซ่อม</h4>
+          <span id="issue-count">0</span>
+        </div>
+        <div class="stat rate card">
+          <h4>อัตราการตรวจ (Coverage)</h4>
+          <span id="coverage-rate">0%</span>
+        </div>
+      </div>
+
+      <!-- แผนผังอาคารแบบ Interactive -->
+      <div class="card">
+        <h3>🗺️ ผังพิกัดอุปกรณ์ความปลอดภัย (Interactive Safety Map)</h3>
+        
+        <div class="map-controls">
+          <label for="map-mode-select" style="font-size:0.9rem; font-weight:600; margin:0;">เลือกอาคาร / โซน:</label>
+          <select id="map-mode-select" onchange="changeMapLevel()">
+            <option value="campus">🌐 ภาพรวมโรงพยาบาลพยุหะคีรี (GPS Campus View)</option>
+            <option value="building_er_lower" selected>🏢 อาคารอุบัติเหตุ (ชั้นล่าง) - ER 1</option>
+            <option value="building_er_upper">🏢 อาคารอุบัติเหตุ (ชั้นบน) - ER 2</option>
+            <option value="building_hpc">🏥 อาคารส่งเสริมสุขภาพ (HPC)</option>
+            <option value="building_ipd">🛏️ อาคารผู้ป่วยใน (IPD)</option>
+            <option value="building_nisit">🩺 อาคารนิสิตคุณากร (Covid 19)</option>
+            <option value="building_opd_dm">💉 ห้องเบาหวาน ตึก OPD</option>
+          </select>
+          <button type="button" class="btn-sm" style="background:#0284c7; color:white; padding:8px 14px;" onclick="locateUserGPS()">📍 ตำแหน่งของฉัน (GPS)</button>
+          <button type="button" id="admin-add-asset-btn" class="btn-sm" style="display:none; background:#16a34a; color:white; padding:8px 16px; font-weight:700; border:none; border-radius:6px; cursor:pointer;" onclick="startAddAssetOnDashboard()">➕ เพิ่มจุดติดตั้งใหม่บนผังนี้</button>
+        </div>
+
+        <div id="admin-map-drag-notice" class="admin-drag-notice hidden">
+          🛠️ <b>โหมดผู้ดูแลระบบ (Admin Mode):</b> ท่านสามารถคลิกลากหมุด <b>⠿</b> บนผังเพื่อขยับตำแหน่ง, คลิกที่หมุดแล้วกด <i>"📍 ย้ายตำแหน่ง"</i>, หรือกดปุ่ม <b>"➕ เพิ่มจุดติดตั้งใหม่บนผังนี้"</b> ด้านบนเพื่อปักหมุดจุดใหม่ได้ทันที
+        </div>
+
+        <!-- แถบแจ้งเตือนเมื่อกดเลือกย้ายจุดติดตั้ง (Relocate Pin Banner) -->
+        <div id="map-relocate-banner" style="display:none;"></div>
+
+        <!-- แถบแจ้งเตือนเมื่อกดเพิ่มอุปกรณ์ใหม่บนผัง (Add Asset Banner) -->
+        <div id="map-add-asset-banner" style="display:none;"></div>
+
+        <div id="floor-map"></div>
+        <p style="font-size:0.82rem; color:#64748b; margin-top:8px;">
+          * จุดสีเขียว = อุปกรณ์พร้อมใช้งาน | จุดสีแดง = ชำรุด/รอแก้ไข | คลิกที่จุดเพื่อดูรายละเอียดและกดบันทึกตรวจเช็กทันที
+        </p>
+      </div>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: สแกนตรวจเช็ก (Scan QR & Inspection) -->
+    <!-- ============================================== -->
+    <section id="tab-scanner" class="tab-content">
+      <div class="card">
+        <h3>📷 สแกน QR Code ประจำจุดอุปกรณ์</h3>
+        <p style="font-size:0.88rem; color:#64748b; margin-top:0;">
+          ส่องกล้องไปที่สติกเกอร์ QR Code บนถังดับเพลิงหรือไฟฉุกเฉินเพื่อเปิดแบบฟอร์มตรวจสอบ
+        </p>
+        <div id="qr-reader"></div>
+        <div style="text-align: center;">
+          <button onclick="stopScanner()" class="btn-secondary">⏹️ ปิดกล้องชั่วคราว</button>
+        </div>
+      </div>
+
+      <!-- กล่องแบบฟอร์มตรวจสอบ (แสดงเมื่อสแกนเจอหรือคลิกจากแผนที่) -->
+      <div id="inspection-form-card" class="card hidden">
+        <h3 id="inspect-title" style="color:#00695c;">ตรวจเช็กอุปกรณ์</h3>
+        <p id="inspect-desc" style="font-weight:600; color:#334155; margin-top:0;"></p>
+
+        <form id="inspection-form">
+          <input type="hidden" id="inspect-id">
+
+          <!-- ข้อมูลช่างผู้ทำการตรวจสอบ -->
+          <div class="form-group-row" style="background:#f8fafc; padding:10px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:14px;">
+            <div>
+              <label style="margin-top:0; font-size:0.86rem; color:#00695c;">👷‍♂️ ชื่อ-นามสกุล ช่างผู้ตรวจเช็ก:</label>
+              <input type="text" id="inspect-inspector-name" value="นายสุวิทย์ พวงสมบัติ" placeholder="เช่น นายสุวิทย์ พวงสมบัติ" required>
+            </div>
+            <div>
+              <label style="margin-top:0; font-size:0.86rem; color:#00695c;">🏷️ ตำแหน่ง / แผนก:</label>
+              <input type="text" id="inspect-inspector-role" value="นายช่างเทคนิค" placeholder="เช่น นายช่างเทคนิค" required>
+            </div>
+          </div>
+
+          <!-- 1. รายการตรวจเช็กสำหรับถังดับเพลิง (Fire Extinguisher) -->
+          <div id="fe-checklist-fields">
+            <label>1. สภาพภายนอก, คันบีบ, สายฉีด, ซีลและสลักล็อก:</label>
+            <select id="fe-body" required>
+              <option value="PASS">✅ ปกติ (สมบูรณ์ สลักล็อกแน่นหนา ไม่แตกหัก)</option>
+              <option value="FAIL">❌ ชำรุด (สลักหลุด / สายแตก / ตัวถังบุบสนิม)</option>
+            </select>
+
+            <label>2. เกจวัดแรงดัน (Pressure Gauge):</label>
+            <select id="fe-pressure" required>
+              <option value="PASS">✅ ปกติ (เข็มชี้อยู่ในแถบสีเขียว)</option>
+              <option value="FAIL">❌ ผิดปกติ (เข็มตกแถบแดง / แรงดันต่ำหรือสูงเกิน)</option>
+            </select>
+
+            <label>3. สภาพแวดล้อมและทางเข้าถึง:</label>
+            <select id="fe-access" required>
+              <option value="PASS">✅ ปกติ (ไม่มีสิ่งของวางกีดขวาง หยิบใช้งานได้ทันที)</option>
+              <option value="FAIL">❌ มีสิ่งของวางบดบังหรือขวางทางเข้าถึง</option>
+            </select>
+          </div>
+
+          <!-- 2. รายการตรวจเช็กสำหรับไฟฉุกเฉิน (Emergency Light) -->
+          <div id="em-checklist-fields" class="hidden">
+            <label>1. สภาพภายนอกและปลั๊กไฟ:</label>
+            <select id="em-plug" required>
+              <option value="PASS">✅ ปกติ (ตัวเครื่องและปลั๊กไฟแน่นหนา ไม่ชำรุด)</option>
+              <option value="FAIL">❌ ชำรุด (ปลั๊กหลวม / สายไฟชำรุด / โคมแตก)</option>
+            </select>
+
+            <label>2. ไฟแสดงสถานะไฟเข้า (AC Indicator):</label>
+            <select id="em-light" required>
+              <option value="PASS">✅ ปกติ (ไฟ LED แสดงสถานะไฟเข้าติดสว่าง)</option>
+              <option value="FAIL">❌ ผิดปกติ (ไฟ AC ไม่ติด / ไฟไม่เข้า)</option>
+            </select>
+
+            <label>3. การทดสอบปุ่ม Test (แบตเตอรี่สำรอง):</label>
+            <select id="em-test" required>
+              <option value="PASS">✅ ปกติ (กดปุ่ม Test แล้วหลอดไฟสว่างทั้ง 2 ดวง)</option>
+              <option value="FAIL">❌ ผิดปกติ (ไฟไม่ติด หรือติดเพียงดวงเดียว / แบตเตอรี่เสื่อม)</option>
+            </select>
+          </div>
+
+          <!-- ภาพถ่ายหลักฐาน -->
+          <label>📷 ถ่ายภาพหลักฐาน (จำเป็นหากพบอุปกรณ์ชำรุด หรือแนบเพื่อยืนยัน):</label>
+          <input type="file" id="inspect-photo" accept="image/*" capture="environment">
+
+          <label>หมายเหตุ / รายละเอียดอาการที่พบ:</label>
+          <textarea id="inspect-notes" rows="2" placeholder="ระบุอาการชำรุด หรือรายละเอียดเพิ่มเติม..."></textarea>
+
+          <button type="submit" id="btn-save-inspect" class="btn-primary">
+            💾 บันทึกผลการตรวจเช็ก
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: ลงทะเบียนอุปกรณ์ (Asset Registration) -->
+    <!-- ============================================== -->
+    <section id="tab-register" class="tab-content">
+      <div class="card">
+        <h3>➕ ลงทะเบียนอุปกรณ์ความปลอดภัยใหม่</h3>
+        <form id="reg-form">
+          <div class="form-group-row">
+            <div>
+              <label>รหัสอุปกรณ์ (Asset ID):</label>
+              <input type="text" id="reg-id" placeholder="เช่น PYH-FE-ER1-09 หรือ PYH-EM-ER1-06" required>
+            </div>
+            <div>
+              <label>ประเภทอุปกรณ์:</label>
+              <select id="reg-type" required>
+                <option value="ถังดับเพลิงสีเขียว (Clean Agent)">ถังดับเพลิงสีเขียว (Clean Agent / Non-CFC)</option>
+                <option value="ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)">ถังดับเพลิงสีแดง (เคมีแห้ง / CO2)</option>
+                <option value="ไฟฉุกเฉิน (Emergency Light)">ไฟฉุกเฉิน (Emergency Light)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group-row">
+            <div>
+              <label>อาคาร / ตึก:</label>
+              <select id="reg-building-select" onchange="updateRegisterMapFloor()" required>
+                <option value="building_er_lower">อาคารอุบัติเหตุ (ชั้นล่าง)</option>
+                <option value="building_er_upper">อาคารอุบัติเหตุ (ชั้นบน)</option>
+                <option value="building_hpc">อาคารส่งเสริมสุขภาพ</option>
+                <option value="building_ipd">อาคารผู้ป่วยใน (IPD)</option>
+                <option value="building_nisit">อาคารนิสิตคุณากร (Covid 19)</option>
+                <option value="building_opd_dm">ห้องเบาหวาน ตึก OPD</option>
+              </select>
+            </div>
+            <div>
+              <label>ชั้นที่ติดตั้ง:</label>
+              <input type="number" id="reg-floor" value="1" min="1" max="5" required>
+            </div>
+          </div>
+
+          <label>ตำแหน่ง / จุดติดตั้งระบุชัดเจน:</label>
+          <input type="text" id="reg-location" placeholder="เช่น หน้าห้องเอกซเรย์, โถงทางเดินกลาง" required>
+
+          <!-- ส่วนกำหนดและขยับจุดติดตั้งบนผังอาคาร (Interactive Floor Plan Coordinate Picker) -->
+          <div style="margin-top:14px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <label style="margin:0; font-weight:700; color:#00695c;">📍 กำหนดตำแหน่งจุดติดตั้งบนผังอาคาร (คลิกหรือลากหมุดเพื่อระบุตำแหน่ง):</label>
+              <span id="reg-coord-badge" class="badge" style="background:#e0f2fe; color:#0369a1;">พิกัดผัง: Y: 280, X: 500</span>
+            </div>
+            <input type="hidden" id="reg-coord-y" value="280">
+            <input type="hidden" id="reg-coord-x" value="500">
+            <div id="register-map" style="height:260px; border-radius:6px; border:1px solid #cbd5e1; background:#f1f5f9;"></div>
+            <p style="font-size:0.8rem; color:#64748b; margin:6px 0 0 0;">
+              * คลิกบนผังอาคาร หรือลากหมุดเพื่อระบุจุดติดตั้งจริงของอุปกรณ์นี้
+            </p>
+          </div>
+
+          <button type="submit" class="btn-primary" style="margin-top:16px;">
+            ✨ บันทึกลงทะเบียน & สร้าง QR Code
+          </button>
+        </form>
+
+        <!-- สติกเกอร์ QR Code สำหรับพิมพ์ -->
+        <div id="qr-output" class="qr-result hidden">
+          <h4>สติกเกอร์รหัสประจำอุปกรณ์</h4>
+          <div id="qrcode"></div>
+          <p id="qr-label" style="font-size:0.95rem; margin:10px 0;"></p>
+          <button onclick="window.print()" class="btn-secondary">🖨️ สั่งพิมพ์สติกเกอร์ติดอุปกรณ์</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: ประวัติการตรวจ (Inspection History) -->
+    <!-- ============================================== -->
+    <section id="tab-history" class="tab-content">
+      <div class="card">
+        <h3>📋 บันทึกประวัติการตรวจสอบย้อนหลัง (Audit Trail)</h3>
+        <p style="font-size:0.85rem; color:#64748b; margin-top:0;">
+          แสดงรายการตรวจสอบล่าสุด เพื่อการติดตามและตรวจประเมินคุณภาพโรงพยาบาล (HA)
+        </p>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>วัน-เวลา</th>
+                <th>รหัสอุปกรณ์</th>
+                <th>ผู้ตรวจเช็ก</th>
+                <th>สถานะ</th>
+                <th>ภาพถ่ายหลักฐาน</th>
+                <th>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody id="history-rows">
+              <!-- ข้อมูลประวัติ -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 5: สำรองและโอนย้ายข้อมูล (Backup & Migration) -->
+    <!-- ============================================== -->
+    <section id="tab-backup" class="tab-content">
+      <div class="card">
+        <h3>💾 ระบบสำรองและโอนย้ายข้อมูล (Data Backup & Migration)</h3>
+        <p style="color:#475569;">
+          ท่านสามารถดาวน์โหลดฐานข้อมูลอุปกรณ์ทั้ง 56 จุด พร้อมประวัติการตรวจสอบทั้งหมดออกมาเป็นไฟล์ JSON สำรองไว้ 
+          และสามารถนำไฟล์นี้ไปอิมพอร์ตเข้าสู่ระบบใหม่หรือระบบของโรงพยาบาลในอนาคตได้ทันที 100%
+        </p>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+          <button onclick="exportSystemData()" class="btn-primary" style="flex:1; margin-top:0; background:#00695c;">
+            📥 ดาวน์โหลดข้อมูลสำรอง (Export JSON)
+          </button>
+          <label class="btn-secondary" style="flex:1; margin-top:0; text-align:center; cursor:pointer; padding:11px 16px; box-sizing:border-box;">
+            📤 นำเข้าข้อมูลสู่ระบบใหม่ (Import JSON)
+            <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importSystemData(event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⚙️ การเชื่อมต่อกับฐานข้อมูลโรงพยาบาล (Firebase Cloud Setup)</h3>
+        <p style="font-size:0.9rem; color:#475569;">
+          ระบบปัจจุบันรองรับการทำงานทั้งแบบ <b>Local Offline Demo</b> และ <b>Google Firebase Real-time Cloud</b><br>
+          หากต้องการเชื่อมต่อกับฐานข้อมูลของหน่วยงาน เพียงเปิดไฟล์ <code>firebase-config.js</code> แล้ววาง Config ที่ได้จาก Firebase Console ของโรงพยาบาล
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 6: ออกรายงานเสนอผู้บริหาร (Executive Inspection Report) -->
+    <!-- ============================================== -->
+    <section id="tab-report" class="tab-content">
+      <!-- แถบเครื่องมือรายงานสำหรับ ผอ. (แสดงอัตโนมัติไม่ต้องกรอกอะไรเลย) -->
+      <!-- แถบเครื่องมือรายงานสรุปเสนอผู้บริหาร (Clean Report Header Bar) -->
+      <div id="executive-report-toolbar" class="card no-print" style="background:linear-gradient(135deg, #004d40, #00695c); color:white; padding:16px 20px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 style="margin:0; color:white; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+              <span>📑 สรุปรายงานผลการตรวจสอบความพร้อมอุปกรณ์ความปลอดภัย</span>
+            </h3>
+            <p style="margin:4px 0 0 0; color:#e0f2f1; font-size:0.86rem;">
+              โรงพยาบาลพยุหะคีรี • ประมวลผลข้อมูลการตรวจเช็กจริงครบทุกอาคาร (6 อาคาร 48 จุดตรวจ)
+            </p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button onclick="simulateFullInspection()" class="btn-sm" style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+              ⚡ จำลองผลตรวจ 100%
+            </button>
+            <button onclick="generateExecutiveReport()" class="btn-sm" style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+              🔄 รีเฟรชรายงาน
+            </button>
+            <button onclick="printExecutiveReport()" class="btn-sm" style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+              🖨️ สั่งพิมพ์ / บันทึก PDF (A4)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- พื้นที่แสดงรายงานเอกสารทางการ (Official Printable Report Container) -->
+      <div id="executive-report-container" class="card" style="padding:0; background:white; border:none; box-shadow:none;">
+        <div id="report-content-body">
+          <!-- เนื้อหารายงานจะถูกเรนเดอร์โดย generateExecutiveReport() -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 7: จัดการบัญชีช่าง & สิทธิ์การใช้งาน (Admin Panel) -->
+    <!-- ============================================== -->
+    <section id="tab-admin" class="tab-content">
+      <div class="card">
+        <h3>👨‍💼 แผงควบคุมผู้ดูแลระบบ (Admin Panel) - รพ.พยุหะคีรี</h3>
+        <p style="color:#475569; margin:0 0 16px 0; font-size:0.92rem;">
+          ยินดีต้อนรับผู้ดูแลระบบ สามารถสร้างบัญชีช่างเทคนิค กำหนดรหัสผ่านเริ่มต้น และกดยืนยันตัวตน (Verify) อนุมัติสิทธิ์ให้ช่างก่อนเริ่มปฏิบัติงานตรวจเช็ก
+        </p>
+
+        <!-- ฟอร์มสร้างบัญชีช่างใหม่ -->
+        <div class="admin-create-card">
+          <h4 style="margin:0 0 12px 0; color:#00695c; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+            <span>➕ สร้างรหัสผ่านและบัญชีช่างเทคนิคใหม่ (Create Technician)</span>
+          </h4>
+          <form onsubmit="event.preventDefault(); adminCreateTechnician();">
+            <div class="form-group-row">
+              <div>
+                <label for="admin-tech-name">ชื่อ-นามสกุล ช่าง:</label>
+                <input type="text" id="admin-tech-name" placeholder="เช่น นายสมบัติ ช่างซ่อม" required>
+              </div>
+              <div>
+                <label for="admin-tech-dept">ตำแหน่ง / หน่วยงาน:</label>
+                <input type="text" id="admin-tech-dept" placeholder="เช่น ช่างซ่อมบำรุง / โครงสร้างพื้นฐาน" required>
+              </div>
+            </div>
+
+            <div class="form-group-row">
+              <div>
+                <label for="admin-tech-email">อีเมลประจำตัวช่าง:</label>
+                <input type="email" id="admin-tech-email" placeholder="technician@pyuhahospital.go.th" required>
+              </div>
+              <div>
+                <label for="admin-tech-pwd">รหัสผ่านเริ่มต้น (อย่างน้อย 6 ตัวอักษร):</label>
+                <input type="password" id="admin-tech-pwd" placeholder="••••••••" minlength="6" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top:14px; background:#00695c; max-width:320px;">
+              💾 บันทึกและออกรหัสบัญชีช่างทันที
+            </button>
+          </form>
+        </div>
+
+        <!-- รายการบัญชีผู้ใช้และการยืนยันตัวตน -->
+        <div style="margin-top:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <h4 style="margin:0; color:#0f172a; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+              <span>📋 ทะเบียนผู้ใช้งานในระบบ & ตรวจสอบการยืนยันตัวตน</span>
+            </h4>
+            <button onclick="renderAdminUserList()" class="btn-sm" style="background:#f1f5f9; color:#00695c; border:1px solid #cbd5e1;">
+              🔄 รีเฟรชรายชื่อ
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ชื่อ-นามสกุล</th>
+                  <th>อีเมล</th>
+                  <th>หน่วยงาน / ตำแหน่ง</th>
+                  <th>ระดับสิทธิ์</th>
+                  <th>สถานะการยืนยันตัวตน</th>
+                  <th style="text-align:center;">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table-body">
+                <!-- ข้อมูลเรนเดอร์โดย JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: เข้าสู่ระบบ / ลงทะเบียนผู้ใช้งาน -->
+  <!-- ============================================== -->
+  <div id="auth-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeAuthModal()">
+    <div class="auth-card" onclick="event.stopPropagation()">
+      <!-- ปุ่มปิด Modal (X) -->
+      <button class="modal-close-btn" onclick="closeAuthModal()" title="ปิดหน้าต่าง">✕</button>
+
+      <!-- ส่วนหัว Header พร้อมแบรนด์ รพ.พยุหะคีรี -->
+      <div class="auth-header">
+        <div class="auth-logo-badge">🏥</div>
+        <h3 class="auth-title">โรงพยาบาลพยุหะคีรี</h3>
+        <p class="auth-subtitle">ระบบบริหารจัดการและตรวจเช็กความปลอดภัยอัจฉริยะ (Fire & Safety Cloud)</p>
+      </div>
+
+      <div class="auth-body">
+        <!-- สวิตช์สลับแท็บ เข้าสู่ระบบ / ลงทะเบียน -->
+        <div class="auth-tab-switch">
+          <button type="button" id="tab-btn-login" class="auth-switch-btn active" onclick="toggleAuthMode('login')">
+            🔐 เข้าสู่ระบบ (Sign In)
+          </button>
+          <button type="button" id="tab-btn-register" class="auth-switch-btn" onclick="toggleAuthMode('register')">
+            📝 ลงทะเบียน (Register)
+          </button>
+        </div>
+
+        <!-- ฟอร์มเข้าสู่ระบบ -->
+        <div id="login-section">
+          <form onsubmit="event.preventDefault(); loginWithEmail();">
+            <div class="auth-field-group">
+              <label for="login-email">
+                <span class="field-icon">📧</span> อีเมลเจ้าหน้าที่ / รหัสประจำตัว:
+              </label>
+              <input type="email" id="login-email" class="auth-input" placeholder="staff@pyuhahospital.go.th" required autocomplete="username">
+            </div>
+
+            <div class="auth-field-group">
+              <label for="login-pwd">
+                <span class="field-icon">🔒</span> รหัสผ่าน:
+              </label>
+              <input type="password" id="login-pwd" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="auth-submit-btn">
+              <span>เข้าสู่ระบบความปลอดภัย</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </form>
+
+          <p style="text-align:center; font-size:0.85rem; margin-top:16px; color:#64748b;">
+            ยังไม่มีบัญชีผู้ใช้งาน? <a href="#" onclick="toggleAuthMode('register')" style="color:#00695c; font-weight:700;">ลงทะเบียนเจ้าหน้าที่ใหม่</a>
+          </p>
+        </div>
+
+        <!-- ฟอร์มลงทะเบียน -->
+        <div id="register-section" class="hidden">
+          <form onsubmit="event.preventDefault(); registerUser();">
+            <div class="auth-field-group">
+              <label for="reg-name">
+                <span class="field-icon">👤</span> ชื่อ-นามสกุล ผู้ใช้งาน:
+              </label>
+              <input type="text" id="reg-name" class="auth-input" placeholder="เช่น นายสุวิทย์ พวงสมบัติ" required>
+            </div>
+
+            <div class="form-group-row">
+              <div class="auth-field-group">
+                <label for="reg-dept">
+                  <span class="field-icon">🏢</span> แผนก / หน่วยงาน:
+                </label>
+                <input type="text" id="reg-dept" class="auth-input" placeholder="กลุ่มงานโครงสร้างพื้นฐาน" required>
+              </div>
+
+              <div class="auth-field-group">
+                <label for="reg-role">
+                  <span class="field-icon">🛡️</span> ระดับสิทธิ์:
+                </label>
+                <select id="reg-role" class="auth-input">
+                  <option value="inspector">นายช่าง / ผู้ตรวจเช็ก (Inspector)</option>
+                  <option value="executive">ผู้บริหาร / ผู้อำนวยการ (Executive)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="auth-field-group">
+              <label for="reg-email">
+                <span class="field-icon">📧</span> อีเมลหน่วยงาน:
+              </label>
+              <input type="email" id="reg-email" class="auth-input" placeholder="officer@pyuhahospital.go.th" required>
+            </div>
+
+            <div class="auth-field-group">
+              <label for="reg-pwd">
+                <span class="field-icon">🔒</span> รหัสผ่าน (อย่างน้อย 6 ตัวอักษร):
+              </label>
+              <input type="password" id="reg-pwd" class="auth-input" placeholder="••••••••" minlength="6" required>
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.82rem; color:#166534; margin-bottom:12px; line-height:1.4;">
+              🛡️ <b>มาตรการความปลอดภัย รพ.พยุหะคีรี:</b><br>
+              บัญชีที่ลงทะเบียนใหม่จะได้รับการตรวจสอบและ <b>ยืนยันตัวตนโดยผู้ดูแลระบบ (Admin)</b> ก่อนจึงจะสามารถล็อกอินเข้าปฏิบัติงานได้
+            </div>
+
+            <button type="submit" class="auth-submit-btn">
+              <span>ยืนยันการลงทะเบียนเจ้าหน้าที่</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </form>
+
+          <p style="text-align:center; font-size:0.85rem; margin-top:16px; color:#64748b;">
+            มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleAuthMode('login')" style="color:#00695c; font-weight:700;">กลับไปหน้าเข้าสู่ระบบ</a>
+          </p>
+        </div>
+
+        <!-- ท้าย Modal -->
+        <div class="auth-footer-note">
+          <span>🔒 มาตรฐานความปลอดภัย รพ.พยุหะคีรี • HA Standard Part II (ENV 1-4)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: เพิ่มอุปกรณ์ใหม่บนแดชบอร์ด (Admin Quick Add) -->
+  <!-- ============================================== -->
+  <div id="quick-add-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeQuickAddModal()">
+    <div class="auth-card" style="max-width:480px;" onclick="event.stopPropagation()">
+      <button class="modal-close-btn" onclick="closeQuickAddModal()" title="ปิด">✕</button>
+      
+      <div class="auth-header" style="background:linear-gradient(135deg, #004d40, #00695c);">
+        <div class="auth-logo-badge">➕</div>
+        <h3 class="auth-title" style="color:white;">เพิ่มจุดติดตั้งอุปกรณ์ความปลอดภัยใหม่</h3>
+        <p class="auth-subtitle" id="quick-add-building-label" style="color:#e0f2f1;">อาคารอุบัติเหตุ (ชั้นล่าง)</p>
+      </div>
+
+      <div class="auth-body" style="padding:20px;">
+        <form onsubmit="event.preventDefault(); submitQuickAddAsset();">
+          <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.88rem; color:#166534;">
+            📍 <b>พิกัดที่เลือกบนผัง:</b> <span id="quick-add-coord-label" style="font-weight:700;">Y: 280, X: 500</span>
+          </div>
+
+          <div class="auth-field-group">
+            <label for="quick-add-type">🧯 ประเภทอุปกรณ์:</label>
+            <select id="quick-add-type" class="auth-input" onchange="autoSuggestQuickAddId()">
+              <option value="ถังดับเพลิง ผงเคมีแห้ง (Dry Chemical)">ถังดับเพลิง ผงเคมีแห้ง (Dry Chemical)</option>
+              <option value="ถังดับเพลิง ก๊าซ CO2">ถังดับเพลิง ก๊าซ CO2</option>
+              <option value="ไฟส่องสว่างฉุกเฉิน (Emergency Light)">ไฟส่องสว่างฉุกเฉิน (Emergency Light)</option>
+            </select>
+          </div>
+
+          <div class="auth-field-group">
+            <label for="quick-add-id">🏷️ รหัสประจำอุปกรณ์ (Asset ID):</label>
+            <input type="text" id="quick-add-id" class="auth-input" placeholder="เช่น PYH-FE-26" required>
+          </div>
+
+          <div class="auth-field-group">
+            <label for="quick-add-location">📍 รายละเอียดจุดติดตั้ง:</label>
+            <input type="text" id="quick-add-location" class="auth-input" placeholder="เช่น หน้าห้องเอกซเรย์, โถงบันไดหนีไฟ" required>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:20px;">
+            <button type="button" onclick="closeQuickAddModal()" class="btn-secondary" style="flex:1; margin-top:0;">
+              ยกเลิก
+            </button>
+            <button type="submit" class="btn-primary" style="flex:2; margin-top:0; background:#00695c;">
+              ✨ บันทึกติดตั้ง & บันทึกลงผัง
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- แจ้งเตือนสถานะการย้ายพิกัดหมุด (Admin Map Toast) -->
+  <div id="map-toast-notification" class="map-toast"></div>
+
+  <script type="module" src="app.js?v=2.3"></script>
+</body>
+</html>
