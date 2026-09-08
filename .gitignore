@@ -1,1 +1,6 @@
 *.metadata.json
+potrace.zip
+potrace/
+test.*
+test_*.*
+inkscape_actions.txt

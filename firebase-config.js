@@ -3,7 +3,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-  getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, 
+  getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc,
   query, orderBy, onSnapshot, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { 
@@ -65,6 +65,7 @@ export {
   setDoc,
   getDoc,
   updateDoc, 
+  deleteDoc,
   query, 
   orderBy, 
   onSnapshot, 

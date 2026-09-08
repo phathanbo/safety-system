@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -9,13 +9,54 @@
     button { background: #004d40; color: white; padding: 12px 28px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 16px; }
     button:disabled { background: #94a3b8; cursor: not-allowed; }
     .warn { background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; color: #92400e; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #f1f5f9; color: #334155; font-weight: 600; }
   </style>
 </head>
 <body>
   <h2>Seed Users to Firestore</h2>
   <div class="warn">ใช้ไฟล์นี้เพียง <strong>ครั้งเดียว</strong> แล้วลบทิ้ง!</div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>ชื่อ-นามสกุล</th>
+        <th>บทบาท (Role)</th>
+        <th>อีเมล</th>
+        <th>รหัสผ่าน</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ผู้ดูแลระบบไอทีและอาคาร</td>
+        <td><code>admin</code></td>
+        <td><code>admin@pyuhahospital.go.th</code></td>
+        <td><code>Admin@Pyuha2026!</code></td>
+      </tr>
+      <tr>
+        <td>นายสุวิทย์ พวงสมบัติ</td>
+        <td><code>inspector</code></td>
+        <td><code>suwit@pyuhahospital.go.th</code></td>
+        <td><code>Suwit@2026!</code></td>
+      </tr>
+      <tr>
+        <td>นายคมสันต์ ศรีสิงห์</td>
+        <td><code>chef_inspector</code></td>
+        <td><code>komsan@pyuhahospital.go.th</code></td>
+        <td><code>Komsan@2026!</code></td>
+      </tr>
+      <tr>
+        <td>นางสาวศิริพรรณ ชมพูภู่</td>
+        <td><code>executive</code></td>
+        <td><code>director@pyuhahospital.go.th</code></td>
+        <td><code>Director@2026!</code></td>
+      </tr>
+    </tbody>
+  </table>
+
   <div class="log" id="log">รอกดปุ่ม...</div>
-  <button id="btn" onclick="seedUsers()">อัปโหลด Users</button>
+  <button id="btn" onclick="seedUsers()">อัปโหลด 4 Users ขึ้น Firebase</button>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -36,6 +77,7 @@
   const USERS = [
     { name: "ผู้ดูแลระบบไอทีและอาคาร", dept: "ศูนย์สารสนเทศและเทคโนโลยี รพ.พยุหะคีรี", email: "admin@pyuhahospital.go.th", password: "Admin@Pyuha2026!", role: "admin", verified: true, createdAt: new Date().toISOString() },
     { name: "นายสุวิทย์ พวงสมบัติ", dept: "นายช่างเทคนิค", email: "suwit@pyuhahospital.go.th", password: "Suwit@2026!", role: "inspector", verified: true, createdAt: new Date().toISOString() },
+    { name: "นายคมสันต์ ศรีสิงห์", dept: "นักเทคนิคการแพทย์ปฏิบัติการ รักษาราชการแทน หัวหน้าฝ่ายบริหารทั่วไป", email: "komsan@pyuhahospital.go.th", password: "Komsan@2026!", role: "chef_inspector", verified: true, createdAt: new Date().toISOString() },
     { name: "นางสาวศิริพรรณ ชมพูภู่", dept: "ผู้อำนวยการโรงพยาบาลพยุหะคีรี", email: "director@pyuhahospital.go.th", password: "Director@2026!", role: "executive", verified: true, createdAt: new Date().toISOString() }
   ];
 

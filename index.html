@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +9,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=2.3">
-  
+
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
+
   <!-- QR Code Scanner & Generator -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
+
 <body>
 
   <!-- ============================================== -->
@@ -25,7 +27,7 @@
   <div id="login-screen" style="
     position: fixed; inset: 0; z-index: 9999;
     background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #004d40 100%);
-    display: flex; align-items: center; justify-content: center;
+    display: none; align-items: center; justify-content: center;
     font-family: 'Sarabun', sans-serif;
   ">
     <div style="
@@ -35,7 +37,7 @@
     ">
       <!-- Logo / Header -->
       <div style="font-size: 3rem; margin-bottom: 8px;">🏥🔒</div>
-      <h2 style="margin: 0 0 4px; color: #0f172a; font-size: 1.3rem;">รพ.พยุหะคีรี</h2>
+      <h2 style="margin: 0 0 4px; color: #0f172a; font-size: 1.3rem;">โรงพยาบาลพยุหะคีรี</h2>
       <p style="margin: 0 0 24px; color: #64748b; font-size: 0.9rem;">Fire & Safety Cloud — กรุณาเข้าสู่ระบบ</p>
 
       <!-- Error message -->
@@ -78,34 +80,37 @@
   <!-- แถบระบุผู้ใช้งาน & ออกจากระบบ -->
   <div class="user-bar" id="user-bar">
     <div>
-      เข้าสู่ระบบโดย: <b id="display-user-name">-</b> 
+      เข้าสู่ระบบโดย: <b id="display-user-name">-</b>
       <span class="role-tag" id="display-user-role">-</span>
     </div>
     <div>
-      <a href="executive_presentation.html" target="_blank" class="btn-sm" style="background:#0284c7; color:white; text-decoration:none; margin-right:6px;">📊 เอกสารนำเสนอผู้บริหาร</a>
-      <button onclick="openAuthModal()" class="btn-sm" style="background:#004d40; color:white; margin-right:6px;">🔑 สลับบัญชี / เข้าสู่ระบบ</button>
+      <button onclick="openAuthModal()" class="btn-sm" style="background:#004d40; color:white; margin-right:6px;">🔑
+        สลับบัญชี / เข้าสู่ระบบ</button>
       <button onclick="logoutUser()" class="btn-sm btn-danger">ออกจากระบบ</button>
     </div>
   </div>
 
   <header>
-    <h1>รพ.พยุหะคีรี - Fire & Safety Cloud</h1>
+    <h1>โรงพยาบาลพยุหะคีรี - Fire & Safety Cloud</h1>
     <p>ระบบบริหารจัดการและตรวจเช็กถังดับเพลิงและไฟฉุกเฉินอัจฉริยะ</p>
-    
+
     <div class="officer-badge">
       <span>ผู้ตรวจประจำเวร: <b id="current-officer-name">-</b></span>
       <button onclick="setOfficerProfile()" class="btn-sm">เปลี่ยนชื่อผู้ตรวจ</button>
     </div>
 
     <div class="nav-tabs">
-      <button id="tab-nav-dashboard" onclick="switchTab('dashboard')" class="tab-btn active">📊 แดชบอร์ด & แผนผัง</button>
+      <button id="tab-nav-dashboard" onclick="switchTab('dashboard')" class="tab-btn active">📊 แดชบอร์ด &
+        แผนผัง</button>
       <button id="tab-nav-scanner" onclick="switchTab('scanner')" class="tab-btn">📷 สแกนตรวจเช็ก</button>
       <button id="tab-nav-register" onclick="switchTab('register')" class="tab-btn">➕ ลงทะเบียนอุปกรณ์</button>
       <button id="tab-nav-assets" onclick="switchTab('assets')" class="tab-btn">🏷️ รายการอุปกรณ์ (QR)</button>
       <button id="tab-nav-history" onclick="switchTab('history')" class="tab-btn">📋 บันทึกประวัติการตรวจ</button>
       <button id="tab-nav-report" onclick="switchTab('report')" class="tab-btn">📑 สรุปรายงานเสนอผู้บริหาร</button>
-      <button id="tab-nav-backup" onclick="switchTab('backup')" class="tab-btn" style="display:none;">💾 สำรองและย้ายข้อมูล</button>
-      <button id="tab-nav-admin" onclick="switchTab('admin')" class="tab-btn" style="display:none; background:#0f172a; border-color:#334155;">👨‍💼 จัดการช่าง (Admin)</button>
+      <button id="tab-nav-backup" onclick="switchTab('backup')" class="tab-btn" style="display:none;">💾
+        สำรองและย้ายข้อมูล</button>
+      <button id="tab-nav-admin" onclick="switchTab('admin')" class="tab-btn"
+        style="display:none; background:#0f172a; border-color:#334155;">👨‍💼 จัดการช่าง (Admin)</button>
     </div>
   </header>
 
@@ -115,7 +120,7 @@
     <!-- TAB 1: แดชบอร์ดและแผนผังอาคาร (Dashboard & Map) -->
     <!-- ============================================== -->
     <section id="tab-dashboard" class="tab-content active">
-      
+
       <!-- KPI Metric Cards -->
       <div class="kpi-container">
         <div class="stat total card">
@@ -125,6 +130,10 @@
         <div class="stat pass card">
           <h4>พร้อมใช้งาน (Ready)</h4>
           <span id="ready-count">0</span>
+        </div>
+        <div class="stat repair card">
+          <h4>อยู่ระหว่างส่งซ่อม</h4>
+          <span id="repair-count">0</span>
         </div>
         <div class="stat fail card">
           <h4>ชำรุด / แจ้งซ่อม</h4>
@@ -139,24 +148,51 @@
       <!-- แผนผังอาคารแบบ Interactive -->
       <div class="card">
         <h3>🗺️ ผังพิกัดอุปกรณ์ความปลอดภัย (Interactive Safety Map)</h3>
-        
+
         <div class="map-controls">
           <label for="map-mode-select" style="font-size:0.9rem; font-weight:600; margin:0;">เลือกอาคาร / โซน:</label>
           <select id="map-mode-select" onchange="changeMapLevel()">
             <option value="campus">🌐 ภาพรวมโรงพยาบาลพยุหะคีรี (GPS Campus View)</option>
             <option value="building_er_lower" selected>🏢 อาคารอุบัติเหตุ (ชั้นล่าง) - ER 1</option>
-            <option value="building_er_upper">🏢 อาคารอุบัติเหตุ (ชั้นบน) - ER 2</option>
+            <option value="building_er_upper">🏢 อาคารอุบัติเหตุ (ชั้นบน) - ห้องบริหารทั่วไป</option>
             <option value="building_hpc">🏥 อาคารส่งเสริมสุขภาพ (HPC)</option>
             <option value="building_ipd">🛏️ อาคารผู้ป่วยใน (IPD)</option>
             <option value="building_nisit">🩺 อาคารนิสิตคุณากร (Covid 19)</option>
-            <option value="building_opd_dm">💉 ห้องเบาหวาน ตึก OPD</option>
+            <option value="building_opd_dm">🏥 ตึกแก้วกัลยา (ผู้ป่วยนอก OPD)</option>
+            <option value="building_pharma_rehab">💊 อาคารเวชศาสตร์ฟื้นฟู-โภชนาการ-คลังยา-จ่ายกลาง</option>
+            <option value="building_thai_med">🌿 อาคารแพทย์แผนไทย</option>
+            <option value="building_canteen">🍲 อาคารโรงอาหาร</option>
           </select>
-          <button type="button" class="btn-sm" style="background:#0284c7; color:white; padding:8px 14px;" onclick="locateUserGPS()">📍 ตำแหน่งของฉัน (GPS)</button>
-          <button type="button" id="admin-add-asset-btn" class="btn-sm" style="display:none; background:#16a34a; color:white; padding:8px 16px; font-weight:700; border:none; border-radius:6px; cursor:pointer;" onclick="startAddAssetOnDashboard()">➕ เพิ่มจุดติดตั้งใหม่บนผังนี้</button>
+          <button type="button" class="btn-sm" style="background:#0284c7; color:white; padding:8px 14px;"
+            onclick="locateUserGPS()">📍 ตำแหน่งของฉัน (GPS)</button>
+          <button type="button" id="admin-add-asset-btn" class="btn-sm"
+            style="display:none; background:#16a34a; color:white; padding:8px 16px; font-weight:700; border:none; border-radius:6px; cursor:pointer;"
+            onclick="startAddAssetOnDashboard()">➕ เพิ่มจุดติดตั้งใหม่บนผังนี้</button>
+        </div>
+
+        <!-- แถบปุ่มลัดสลับไปยังผังอาคารต่าง ๆ ทันที (Quick Building Switcher) -->
+        <div id="building-quick-switcher" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; padding:10px 14px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border:1px solid #e2e8f0; border-radius:10px;">
+          <span style="font-size:0.84rem; font-weight:700; color:#334155; display:flex; align-items:center; gap:5px;">
+            🏢 <span>คลิกเปิดผังอาคาร:</span>
+          </span>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('campus')" style="background:#0284c7; color:white; border-radius:20px; padding:5px 12px; font-size:0.8rem; border:none; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">🌐 ภาพรวมโรงพยาบาล</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_lower')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢 อุบัติเหตุ (ชั้นล่าง)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_upper')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢 อุบัติเหตุ (ชั้นบน)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_hpc')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥 ส่งเสริมสุขภาพ (HPC)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_ipd')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🛏️ ผู้ป่วยใน (IPD)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_nisit')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🩺 นิสิตคุณากร</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_opd_dm')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥 ตึกแก้วกัลยา</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_pharma_rehab')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">💊 เวชศาสตร์ฯ-คลังยา</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_thai_med')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🌿 แพทย์แผนไทย</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_canteen')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🍲 โรงอาหาร</button>
+          </div>
         </div>
 
         <div id="admin-map-drag-notice" class="admin-drag-notice hidden">
-          🛠️ <b>โหมดผู้ดูแลระบบ (Admin Mode):</b> ท่านสามารถคลิกลากหมุด <b>⠿</b> บนผังเพื่อขยับตำแหน่ง, คลิกที่หมุดแล้วกด <i>"📍 ย้ายตำแหน่ง"</i>, หรือกดปุ่ม <b>"➕ เพิ่มจุดติดตั้งใหม่บนผังนี้"</b> ด้านบนเพื่อปักหมุดจุดใหม่ได้ทันที
+          🛠️ <b>โหมดผู้ดูแลระบบ (Admin Mode):</b> ท่านสามารถคลิกลากหมุด <b>⠿</b> บนผังเพื่อขยับตำแหน่ง,
+          คลิกที่หมุดแล้วกด <i>"📍 ย้ายตำแหน่ง"</i>, หรือกดปุ่ม <b>"➕ เพิ่มจุดติดตั้งใหม่บนผังนี้"</b>
+          ด้านบนเพื่อปักหมุดจุดใหม่ได้ทันที
         </div>
 
         <!-- แถบแจ้งเตือนเมื่อกดเลือกย้ายจุดติดตั้ง (Relocate Pin Banner) -->
@@ -167,16 +203,20 @@
 
         <div id="floor-map"></div>
         <p style="font-size:0.82rem; color:#64748b; margin-top:8px;">
-          * จุดสีเขียว = อุปกรณ์พร้อมใช้งาน | จุดสีแดง = ชำรุด/รอแก้ไข | คลิกที่จุดเพื่อดูรายละเอียดและกดบันทึกตรวจเช็กทันที
+          * จุดสีเขียว = อุปกรณ์พร้อมใช้งาน | จุดสีแดง = ชำรุด/รอแก้ไข |
+          คลิกที่จุดเพื่อดูรายละเอียดและกดบันทึกตรวจเช็กทันที
         </p>
 
         <!-- รายการอุปกรณ์และลำดับประจำโซน/อาคารนี้ (Quick Asset Index List) -->
-        <div id="dashboard-asset-quicklist-container" style="margin-top:16px; border-top:1px dashed #e2e8f0; padding-top:14px;">
+        <div id="dashboard-asset-quicklist-container"
+          style="margin-top:16px; border-top:1px dashed #e2e8f0; padding-top:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h4 style="margin:0; font-size:0.95rem; color:#1e293b;">📌 ลำดับอุปกรณ์ในอาคาร/โซนนี้ (<span id="dashboard-zone-count">0</span> จุด)</h4>
+            <h4 style="margin:0; font-size:0.95rem; color:#1e293b;">📌 ลำดับอุปกรณ์ในอาคาร/โซนนี้ (<span
+                id="dashboard-zone-count">0</span> จุด)</h4>
             <span style="font-size:0.75rem; color:#64748b;">คลิกที่การ์ดเพื่อเล็งตำแหน่งบนผังทันที 🎯</span>
           </div>
-          <div id="dashboard-asset-chips" style="display:flex; flex-wrap:wrap; gap:8px; max-height:160px; overflow-y:auto; padding:4px;">
+          <div id="dashboard-asset-chips"
+            style="display:flex; flex-wrap:wrap; gap:8px; max-height:160px; overflow-y:auto; padding:4px;">
             <!-- รายการปุ่มลำดับอุปกรณ์จะแสดงที่นี่ -->
           </div>
         </div>
@@ -194,8 +234,30 @@
           ส่องกล้องไปที่สติกเกอร์ QR Code บนถังดับเพลิงหรือไฟฉุกเฉินเพื่อเปิดแบบฟอร์มตรวจสอบ
         </p>
         <div id="qr-reader"></div>
-        <div style="text-align: center;">
-          <button onclick="stopScanner()" class="btn-secondary">⏹️ ปิดกล้องชั่วคราว</button>
+        <div style="text-align: center; margin-top: 10px;">
+          <button onclick="stopScanner()" class="btn-secondary" style="margin-right: 6px;">⏹️ ปิดกล้อง</button>
+          <button onclick="startScanner()" class="btn-sm" style="background:#0284c7; color:white; padding:8px 16px;">🔄
+            เปิดกล้องใหม่</button>
+        </div>
+
+        <!-- กล่องเลือกกรอกรหัสอุปกรณ์โดยตรง หรืออัปโหลดภาพ QR (Fallback หากไม่มีกล้อง/คอมตั้งโต๊ะ) -->
+        <div
+          style="margin-top:20px; padding:16px 18px; background:rgba(241, 245, 249, 0.7); border:1px solid rgba(226, 232, 240, 0.9); border-radius:14px;">
+          <h4 style="margin:0 0 8px 0; font-size:0.95rem; color:#00695c; display:flex; align-items:center; gap:6px;">
+            <span>⌨️ หรือพิมพ์รหัสอุปกรณ์โดยตรง (สำหรับอุปกรณ์ที่ไม่มีกล้อง)</span>
+          </h4>
+          <form onsubmit="event.preventDefault(); submitManualScanId();" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" id="manual-scan-asset-id" placeholder="พิมพ์รหัส เช่น PYH-FE-ER1-01" required
+              style="flex:1; min-width:200px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:10px; font-size:0.92rem; text-transform:uppercase;">
+            <button type="submit" class="btn-sm"
+              style="background:#00695c; color:white; padding:10px 20px; font-size:0.9rem; font-weight:700; border-radius:10px; border:none; cursor:pointer;">
+              🔍 ตรวจเช็กจุดนี้
+            </button>
+          </form>
+          <p style="font-size:0.78rem; color:#64748b; margin:6px 0 0 0;">
+            💡 คำแนะนำ: หากใช้งานบนคอมพิวเตอร์ตั้งโต๊ะที่ไม่มีกล้องเว็บแคม
+            สามารถพิมพ์รหัสอุปกรณ์เพื่อเปิดแบบฟอร์มตรวจเช็กได้ทันที
+          </p>
         </div>
       </div>
 
@@ -208,14 +270,17 @@
           <input type="hidden" id="inspect-id">
 
           <!-- ข้อมูลช่างผู้ทำการตรวจสอบ -->
-          <div class="form-group-row" style="background:#f8fafc; padding:10px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:14px;">
+          <div class="form-group-row"
+            style="background:#f8fafc; padding:10px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:14px;">
             <div>
               <label style="margin-top:0; font-size:0.86rem; color:#00695c;">👷‍♂️ ชื่อ-นามสกุล ช่างผู้ตรวจเช็ก:</label>
-              <input type="text" id="inspect-inspector-name" value="นายสุวิทย์ พวงสมบัติ" placeholder="เช่น นายสุวิทย์ พวงสมบัติ" required>
+              <input type="text" id="inspect-inspector-name" value="นายสุวิทย์ พวงสมบัติ"
+                placeholder="เช่น นายสุวิทย์ พวงสมบัติ" required>
             </div>
             <div>
               <label style="margin-top:0; font-size:0.86rem; color:#00695c;">🏷️ ตำแหน่ง / แผนก:</label>
-              <input type="text" id="inspect-inspector-role" value="นายช่างเทคนิค" placeholder="เช่น นายช่างเทคนิค" required>
+              <input type="text" id="inspect-inspector-role" value="นายช่างเทคนิค" placeholder="เช่น นายช่างเทคนิค"
+                required>
             </div>
           </div>
 
@@ -286,16 +351,18 @@
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="margin:0;">รหัสอุปกรณ์ (Asset ID):</label>
-                <span id="reg-id-auto-badge" style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡ รันต่ออัตโนมัติ</span>
+                <span id="reg-id-auto-badge"
+                  style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡
+                  รันต่ออัตโนมัติ</span>
               </div>
               <input type="text" id="reg-id" placeholder="เช่น PYH-FE-ER1-09 หรือ PYH-EM-ER1-06" required>
             </div>
             <div>
               <label>ประเภทอุปกรณ์:</label>
               <select id="reg-type" onchange="autoSuggestRegisterId()" required>
-                <option value="ถังดับเพลิงสีเขียว (Clean Agent)">ถังดับเพลิงสีเขียว (Clean Agent / Non-CFC)</option>
-                <option value="ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)">ถังดับเพลิงสีแดง (เคมีแห้ง / CO2)</option>
-                <option value="ไฟฉุกเฉิน (Emergency Light)">ไฟฉุกเฉิน (Emergency Light)</option>
+                <option value="ถังดับเพลิงสีแดง">ถังดับเพลิงสีแดง</option>
+                <option value="ถังดับเพลิงสีเขียว">ถังดับเพลิงสีเขียว</option>
+                <option value="ไฟฉุกเฉิน">ไฟฉุกเฉิน</option>
               </select>
             </div>
           </div>
@@ -309,7 +376,10 @@
                 <option value="building_hpc">อาคารส่งเสริมสุขภาพ</option>
                 <option value="building_ipd">อาคารผู้ป่วยใน (IPD)</option>
                 <option value="building_nisit">อาคารนิสิตคุณากร (Covid 19)</option>
-                <option value="building_opd_dm">ห้องเบาหวาน ตึก OPD</option>
+                <option value="building_opd_dm">ตึกแก้วกัลยา (ผู้ป่วยนอก OPD)</option>
+                <option value="building_pharma_rehab">อาคารเวชศาสตร์ฟื้นฟู-โภชนาการ-คลังยา-จ่ายกลาง</option>
+                <option value="building_thai_med">อาคารแพทย์แผนไทย</option>
+                <option value="building_canteen">อาคารโรงอาหาร</option>
               </select>
             </div>
             <div>
@@ -323,13 +393,17 @@
 
           <!-- ส่วนกำหนดและขยับจุดติดตั้งบนผังอาคาร (Interactive Floor Plan Coordinate Picker) -->
           <div style="margin-top:14px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-              <label style="margin:0; font-weight:700; color:#00695c;">📍 กำหนดตำแหน่งจุดติดตั้งบนผังอาคาร (คลิกหรือลากหมุดเพื่อระบุตำแหน่ง):</label>
-              <span id="reg-coord-badge" class="badge" style="background:#e0f2fe; color:#0369a1;">พิกัดผัง: Y: 280, X: 500</span>
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <label style="margin:0; font-weight:700; color:#00695c;">📍 กำหนดตำแหน่งจุดติดตั้งบนผังอาคาร
+                (คลิกหรือลากหมุดเพื่อระบุตำแหน่ง):</label>
+              <span id="reg-coord-badge" class="badge" style="background:#e0f2fe; color:#0369a1;">พิกัดผัง: Y: 280, X:
+                500</span>
             </div>
             <input type="hidden" id="reg-coord-y" value="280">
             <input type="hidden" id="reg-coord-x" value="500">
-            <div id="register-map" style="height:260px; border-radius:6px; border:1px solid #cbd5e1; background:#f1f5f9;"></div>
+            <div id="register-map"
+              style="height:260px; border-radius:6px; border:1px solid #cbd5e1; background:#f1f5f9;"></div>
             <p style="font-size:0.8rem; color:#64748b; margin:6px 0 0 0;">
               * คลิกบนผังอาคาร หรือลากหมุดเพื่อระบุจุดติดตั้งจริงของอุปกรณ์นี้
             </p>
@@ -373,8 +447,13 @@
             <input id="asset-search" type="text" placeholder="🔍 ค้นหารหัส / จุดติดตั้ง..."
               oninput="renderAssetListTable()"
               style="padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; min-width:180px;">
-            <button onclick="printAllQR()" style="background:#0284c7; color:white; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; cursor:pointer;">
+            <button onclick="printAllQR()"
+              style="background:#0284c7; color:white; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; cursor:pointer;">
               🖨️ พิมพ์ QR ทั้งหมด
+            </button>
+            <button id="admin-delete-all-btn" onclick="adminDeleteAllAssets()"
+              style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; border-radius:8px; padding:7px 14px; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              🗑️ ลบอุปกรณ์ทั้งหมด
             </button>
           </div>
         </div>
@@ -393,7 +472,9 @@
               </tr>
             </thead>
             <tbody id="asset-list-rows">
-              <tr><td colspan="8" style="text-align:center; color:#64748b; padding:20px;">กำลังโหลด...</td></tr>
+              <tr>
+                <td colspan="8" style="text-align:center; color:#64748b; padding:20px;">กำลังโหลด...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -401,15 +482,19 @@
     </section>
 
     <!-- Modal ดูประวัติการตรวจสอบเฉพาะอุปกรณ์นั้น ๆ (Per-Asset History Modal) -->
-    <div id="asset-history-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8500; align-items:center; justify-content:center; padding:16px;">
-      <div style="background:white; border-radius:16px; width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.4);">
+    <div id="asset-history-modal"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8500; align-items:center; justify-content:center; padding:16px;">
+      <div
+        style="background:white; border-radius:16px; width:100%; max-width:680px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.4);">
         <!-- Modal Header -->
-        <div style="padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-radius:16px 16px 0 0;">
+        <div
+          style="padding:18px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border-radius:16px 16px 0 0;">
           <div>
             <h3 id="asset-modal-title" style="margin:0; font-size:1.15rem; color:#0f172a;">📜 ประวัติการตรวจเช็ก</h3>
             <p id="asset-modal-subtitle" style="margin:2px 0 0; font-size:0.83rem; color:#64748b;"></p>
           </div>
-          <button onclick="closeAssetHistoryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b; line-height:1;">✕</button>
+          <button onclick="closeAssetHistoryModal()"
+            style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b; line-height:1;">✕</button>
         </div>
         <!-- Modal Body (ตารางประวัติ) -->
         <div style="padding:20px 24px; overflow-y:auto; flex:1;">
@@ -432,22 +517,69 @@
           </div>
         </div>
         <!-- Modal Footer -->
-        <div style="padding:14px 24px; border-top:1px solid #e2e8f0; text-align:right; background:#f8fafc; border-radius:0 0 16px 16px;">
-          <button onclick="closeAssetHistoryModal()" class="btn-secondary" style="margin:0; padding:7px 18px;">ปิดหน้าต่าง</button>
+        <div
+          style="padding:14px 24px; border-top:1px solid #e2e8f0; text-align:right; background:#f8fafc; border-radius:0 0 16px 16px;">
+          <button onclick="closeAssetHistoryModal()" class="btn-secondary"
+            style="margin:0; padding:7px 18px;">ปิดหน้าต่าง</button>
         </div>
       </div>
     </div>
 
+    <!-- Modal บันทึกผลการซ่อมเสร็จสิ้น (Repair Complete Modal) -->
+    <div id="repair-complete-modal"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8600; align-items:center; justify-content:center; padding:16px;">
+      <div
+        style="background:white; border-radius:18px; width:100%; max-width:480px; box-shadow:0 25px 60px rgba(0,0,0,0.4); overflow:hidden;">
+        <div style="padding:18px 24px; background:linear-gradient(135deg, #059669, #047857); color:white;">
+          <h3 id="repair-modal-title" style="margin:0; font-size:1.15rem; color:white;">✅ รายงานผลการซ่อมบำรุงเสร็จสิ้น
+          </h3>
+          <p id="repair-modal-sub" style="margin:4px 0 0; font-size:0.84rem; opacity:0.9;">
+            ปรับสถานะอุปกรณ์กลับเป็นพร้อมใช้งานปกติ</p>
+        </div>
+        <form id="repair-modal-form" onsubmit="event.preventDefault(); submitAssetRepaired();"
+          style="padding:20px 24px;">
+          <input type="hidden" id="repair-target-asset-id" value="">
+          <div>
+            <label style="font-weight:600; font-size:0.88rem; color:#1e293b;">ชื่อช่างผู้ดำเนินการซ่อม:</label>
+            <input type="text" id="repair-technician-name" required
+              style="width:100%; padding:9px 12px; margin-top:5px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.92rem;">
+          </div>
+          <div style="margin-top:12px;">
+            <label style="font-weight:600; font-size:0.88rem; color:#1e293b;">รายละเอียดการซ่อมแซม / แก้ไขปัญหา:</label>
+            <textarea id="repair-notes-input" rows="3" required
+              placeholder="เช่น เปลี่ยนเกจวัดแรงดันใหม่, เติมน้ำยาเคมี, เปลี่ยนหลอดไฟฉุกเฉิน..."
+              style="width:100%; padding:9px 12px; margin-top:5px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.92rem;"></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
+            <button type="button" onclick="closeRepairCompleteModal()" class="btn-secondary"
+              style="padding:9px 16px; border-radius:8px;">ยกเลิก</button>
+            <button type="submit" id="repair-submit-btn"
+              style="background:#059669; color:white; border:none; padding:9px 20px; border-radius:8px; font-weight:600; cursor:pointer;">
+              ✅ ยืนยันซ่อมเสร็จ & คืนสถานะปกติ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- modal แสดง QR ขนาดใหญ่ -->
-    <div id="qr-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8000; align-items:center; justify-content:center;">
-      <div style="background:white; border-radius:16px; padding:32px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div id="qr-modal"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8000; align-items:center; justify-content:center;">
+      <div
+        style="background:white; border-radius:16px; padding:32px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
         <h3 id="qr-modal-title" style="margin:0 0 16px; font-size:1.1rem; color:#0f172a;">QR Code</h3>
         <div id="qr-modal-canvas" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
         <p id="qr-modal-label" style="font-size:0.85rem; color:#475569; margin:0 0 20px;"></p>
         <div style="display:flex; gap:10px; justify-content:center;">
-          <button onclick="downloadQR()" style="background:#00695c; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">⬇️ บันทึกภาพ</button>
-          <button onclick="printQRModal()" style="background:#0284c7; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">🖨️ พิมพ์</button>
-          <button onclick="closeQRModal()" style="background:#e2e8f0; color:#374151; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">✕ ปิด</button>
+          <button onclick="downloadQR()"
+            style="background:#00695c; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">⬇️
+            บันทึกภาพ</button>
+          <button onclick="printQRModal()"
+            style="background:#0284c7; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">🖨️
+            พิมพ์</button>
+          <button onclick="closeQRModal()"
+            style="background:#e2e8f0; color:#374151; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">✕
+            ปิด</button>
         </div>
       </div>
     </div>
@@ -457,7 +589,8 @@
     <!-- ============================================== -->
     <section id="tab-history" class="tab-content">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
           <div>
             <h3 style="margin:0;">📋 สมุดบันทึกประวัติการตรวจสอบทั้งหมด (Audit Trail)</h3>
             <p style="font-size:0.82rem; color:#64748b; margin:4px 0 0;">
@@ -471,8 +604,7 @@
               <option value="READY">✅ ปกติเท่านั้น</option>
               <option value="ISSUE">⚠️ ชำรุดเท่านั้น</option>
             </select>
-            <input id="history-search" type="text" placeholder="ค้นหารหัสอุปกรณ์..."
-              oninput="renderHistoryTable()"
+            <input id="history-search" type="text" placeholder="ค้นหารหัสอุปกรณ์..." oninput="renderHistoryTable()"
               style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; width:160px;">
           </div>
         </div>
@@ -505,17 +637,31 @@
       <div class="card">
         <h3>💾 ระบบสำรองและโอนย้ายข้อมูล (Data Backup & Migration)</h3>
         <p style="color:#475569;">
-          ท่านสามารถดาวน์โหลดฐานข้อมูลอุปกรณ์ทั้ง 56 จุด พร้อมประวัติการตรวจสอบทั้งหมดออกมาเป็นไฟล์ JSON สำรองไว้ 
+          ท่านสามารถดาวน์โหลดฐานข้อมูลอุปกรณ์ทั้ง 56 จุด พร้อมประวัติการตรวจสอบทั้งหมดออกมาเป็นไฟล์ JSON สำรองไว้
           และสามารถนำไฟล์นี้ไปอิมพอร์ตเข้าสู่ระบบใหม่หรือระบบของโรงพยาบาลในอนาคตได้ทันที 100%
         </p>
 
         <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+          <button onclick="syncAllAssetsToFirestore()" class="btn-primary"
+            style="flex:1; margin-top:0; background:#0284c7;">
+            ☁️ อัปโหลดข้อมูลอุปกรณ์ทั้งหมดขึ้น Firebase (Sync to Cloud)
+          </button>
+          <button onclick="cleanDuplicateAssetsFromCloud()" class="btn-secondary"
+            style="flex:1; margin-top:0; background:#fff1f2; color:#be123c; border:1px solid #fecdd3; font-weight:600;">
+            🧹 ล้างรายการอุปกรณ์ที่ซ้ำซ้อน (Clean Duplicates)
+          </button>
+          <button onclick="adminDeleteAllAssets()" class="btn-secondary"
+            style="flex:1; margin-top:0; background:#fef2f2; color:#991b1b; border:1px solid #f87171; font-weight:700;">
+            🗑️ ลบอุปกรณ์ทั้งหมดในระบบ (Clear All Assets)
+          </button>
           <button onclick="exportSystemData()" class="btn-primary" style="flex:1; margin-top:0; background:#00695c;">
             📥 ดาวน์โหลดข้อมูลสำรอง (Export JSON)
           </button>
-          <label class="btn-secondary" style="flex:1; margin-top:0; text-align:center; cursor:pointer; padding:11px 16px; box-sizing:border-box;">
+          <label class="btn-secondary"
+            style="flex:1; margin-top:0; text-align:center; cursor:pointer; padding:11px 16px; box-sizing:border-box;">
             📤 นำเข้าข้อมูลสู่ระบบใหม่ (Import JSON)
-            <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importSystemData(event)">
+            <input type="file" id="import-json-file" accept=".json" style="display:none;"
+              onchange="importSystemData(event)">
           </label>
         </div>
       </div>
@@ -524,7 +670,8 @@
         <h3>⚙️ การเชื่อมต่อกับฐานข้อมูลโรงพยาบาล (Firebase Cloud Setup)</h3>
         <p style="font-size:0.9rem; color:#475569;">
           ระบบปัจจุบันรองรับการทำงานทั้งแบบ <b>Local Offline Demo</b> และ <b>Google Firebase Real-time Cloud</b><br>
-          หากต้องการเชื่อมต่อกับฐานข้อมูลของหน่วยงาน เพียงเปิดไฟล์ <code>firebase-config.js</code> แล้ววาง Config ที่ได้จาก Firebase Console ของโรงพยาบาล
+          หากต้องการเชื่อมต่อกับฐานข้อมูลของหน่วยงาน เพียงเปิดไฟล์ <code>firebase-config.js</code> แล้ววาง Config
+          ที่ได้จาก Firebase Console ของโรงพยาบาล
         </p>
       </div>
     </section>
@@ -535,7 +682,8 @@
     <section id="tab-report" class="tab-content">
       <!-- แถบเครื่องมือรายงานสำหรับ ผอ. (แสดงอัตโนมัติไม่ต้องกรอกอะไรเลย) -->
       <!-- แถบเครื่องมือรายงานสรุปเสนอผู้บริหาร (Clean Report Header Bar) -->
-      <div id="executive-report-toolbar" class="card no-print" style="background:linear-gradient(135deg, #004d40, #00695c); color:white; padding:16px 20px; margin-bottom:14px;">
+      <div id="executive-report-toolbar" class="card no-print"
+        style="background:linear-gradient(135deg, #004d40, #00695c); color:white; padding:16px 20px; margin-bottom:14px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h3 style="margin:0; color:white; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
@@ -546,13 +694,16 @@
             </p>
           </div>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button onclick="simulateFullInspection()" class="btn-sm" style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+            <button onclick="simulateFullInspection()" class="btn-sm"
+              style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               ⚡ จำลองผลตรวจ 100%
             </button>
-            <button onclick="generateExecutiveReport()" class="btn-sm" style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+            <button onclick="generateExecutiveReport()" class="btn-sm"
+              style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               🔄 รีเฟรชรายงาน
             </button>
-            <button onclick="printExecutiveReport()" class="btn-sm" style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            <button onclick="printExecutiveReport()" class="btn-sm"
+              style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
               🖨️ สั่งพิมพ์ / บันทึก PDF (A4)
             </button>
           </div>
@@ -560,7 +711,8 @@
       </div>
 
       <!-- พื้นที่แสดงรายงานเอกสารทางการ (Official Printable Report Container) -->
-      <div id="executive-report-container" class="card" style="padding:0; background:white; border:none; box-shadow:none;">
+      <div id="executive-report-container" class="card"
+        style="padding:0; background:white; border:none; box-shadow:none;">
         <div id="report-content-body">
           <!-- เนื้อหารายงานจะถูกเรนเดอร์โดย generateExecutiveReport() -->
         </div>
@@ -574,7 +726,8 @@
       <div class="card">
         <h3>👨‍💼 แผงควบคุมผู้ดูแลระบบ (Admin Panel) - รพ.พยุหะคีรี</h3>
         <p style="color:#475569; margin:0 0 16px 0; font-size:0.92rem;">
-          ยินดีต้อนรับผู้ดูแลระบบ สามารถสร้างบัญชีช่างเทคนิค กำหนดรหัสผ่านเริ่มต้น และกดยืนยันตัวตน (Verify) อนุมัติสิทธิ์ให้ช่างก่อนเริ่มปฏิบัติงานตรวจเช็ก
+          ยินดีต้อนรับผู้ดูแลระบบ สามารถสร้างบัญชีช่างเทคนิค กำหนดรหัสผ่านเริ่มต้น และกดยืนยันตัวตน (Verify)
+          อนุมัติสิทธิ์ให้ช่างก่อนเริ่มปฏิบัติงานตรวจเช็ก
         </p>
 
         <!-- ฟอร์มสร้างบัญชีช่างใหม่ -->
@@ -613,11 +766,13 @@
 
         <!-- รายการบัญชีผู้ใช้และการยืนยันตัวตน -->
         <div style="margin-top:24px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
             <h4 style="margin:0; color:#0f172a; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
               <span>📋 ทะเบียนผู้ใช้งานในระบบ & ตรวจสอบการยืนยันตัวตน</span>
             </h4>
-            <button onclick="renderAdminUserList()" class="btn-sm" style="background:#f1f5f9; color:#00695c; border:1px solid #cbd5e1;">
+            <button onclick="renderAdminUserList()" class="btn-sm"
+              style="background:#f1f5f9; color:#00695c; border:1px solid #cbd5e1;">
               🔄 รีเฟรชรายชื่อ
             </button>
           </div>
@@ -678,14 +833,16 @@
               <label for="login-email">
                 <span class="field-icon">📧</span> อีเมลเจ้าหน้าที่ / รหัสประจำตัว:
               </label>
-              <input type="email" id="login-email" class="auth-input" placeholder="staff@pyuhahospital.go.th" required autocomplete="username">
+              <input type="email" id="login-email" class="auth-input" placeholder="staff@pyuhahospital.go.th" required
+                autocomplete="username">
             </div>
 
             <div class="auth-field-group">
               <label for="login-pwd">
                 <span class="field-icon">🔒</span> รหัสผ่าน:
               </label>
-              <input type="password" id="login-pwd" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+              <input type="password" id="login-pwd" class="auth-input" placeholder="••••••••" required
+                autocomplete="current-password">
             </div>
 
             <button type="submit" class="auth-submit-btn">
@@ -695,7 +852,8 @@
           </form>
 
           <p style="text-align:center; font-size:0.85rem; margin-top:16px; color:#64748b;">
-            ยังไม่มีบัญชีผู้ใช้งาน? <a href="#" onclick="toggleAuthMode('register')" style="color:#00695c; font-weight:700;">ลงทะเบียนเจ้าหน้าที่ใหม่</a>
+            ยังไม่มีบัญชีผู้ใช้งาน? <a href="#" onclick="toggleAuthMode('register')"
+              style="color:#00695c; font-weight:700;">ลงทะเบียนเจ้าหน้าที่ใหม่</a>
           </p>
         </div>
 
@@ -723,6 +881,7 @@
                 </label>
                 <select id="reg-role" class="auth-input">
                   <option value="inspector">นายช่าง / ผู้ตรวจเช็ก (Inspector)</option>
+                  <option value="chef_inspector">หัวหน้าผู้ตรวจสอบ (Chef Inspector)</option>
                   <option value="executive">ผู้บริหาร / ผู้อำนวยการ (Executive)</option>
                 </select>
               </div>
@@ -742,9 +901,11 @@
               <input type="password" id="reg-pwd" class="auth-input" placeholder="••••••••" minlength="6" required>
             </div>
 
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.82rem; color:#166534; margin-bottom:12px; line-height:1.4;">
-              🛡️ <b>มาตรการความปลอดภัย รพ.พยุหะคีรี:</b><br>
-              บัญชีที่ลงทะเบียนใหม่จะได้รับการตรวจสอบและ <b>ยืนยันตัวตนโดยผู้ดูแลระบบ (Admin)</b> ก่อนจึงจะสามารถล็อกอินเข้าปฏิบัติงานได้
+            <div
+              style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.82rem; color:#166534; margin-bottom:12px; line-height:1.4;">
+              🛡️ <b>มาตรการความปลอดภัย โรงพยาบาลพยุหะคีรี:</b><br>
+              บัญชีที่ลงทะเบียนใหม่จะได้รับการตรวจสอบและ <b>ยืนยันตัวตนโดยผู้ดูแลระบบ (Admin)</b>
+              ก่อนจึงจะสามารถล็อกอินเข้าปฏิบัติงานได้
             </div>
 
             <button type="submit" class="auth-submit-btn">
@@ -754,13 +915,14 @@
           </form>
 
           <p style="text-align:center; font-size:0.85rem; margin-top:16px; color:#64748b;">
-            มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleAuthMode('login')" style="color:#00695c; font-weight:700;">กลับไปหน้าเข้าสู่ระบบ</a>
+            มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleAuthMode('login')"
+              style="color:#00695c; font-weight:700;">กลับไปหน้าเข้าสู่ระบบ</a>
           </p>
         </div>
 
         <!-- ท้าย Modal -->
         <div class="auth-footer-note">
-          <span>🔒 มาตรฐานความปลอดภัย รพ.พยุหะคีรี • HA Standard Part II (ENV 1-4)</span>
+          <span>🔒 มาตรฐานความปลอดภัย โรงพยาบาลพยุหะคีรี • HA Standard Part II (ENV 1-4)</span>
         </div>
       </div>
     </div>
@@ -772,7 +934,7 @@
   <div id="quick-add-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeQuickAddModal()">
     <div class="auth-card" style="max-width:480px;" onclick="event.stopPropagation()">
       <button class="modal-close-btn" onclick="closeQuickAddModal()" title="ปิด">✕</button>
-      
+
       <div class="auth-header" style="background:linear-gradient(135deg, #004d40, #00695c);">
         <div class="auth-logo-badge">➕</div>
         <h3 class="auth-title" style="color:white;">เพิ่มจุดติดตั้งอุปกรณ์ความปลอดภัยใหม่</h3>
@@ -781,30 +943,35 @@
 
       <div class="auth-body" style="padding:20px;">
         <form onsubmit="event.preventDefault(); submitQuickAddAsset();">
-          <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.88rem; color:#166534;">
-            📍 <b>พิกัดที่เลือกบนผัง:</b> <span id="quick-add-coord-label" style="font-weight:700;">Y: 280, X: 500</span>
+          <div
+            style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.88rem; color:#166534;">
+            📍 <b>พิกัดที่เลือกบนผัง:</b> <span id="quick-add-coord-label" style="font-weight:700;">Y: 280, X:
+              500</span>
           </div>
 
           <div class="auth-field-group">
             <label for="quick-add-type">🧯 ประเภทอุปกรณ์:</label>
             <select id="quick-add-type" class="auth-input" onchange="autoSuggestQuickAddId()">
-              <option value="ถังดับเพลิง ผงเคมีแห้ง (Dry Chemical)">ถังดับเพลิง ผงเคมีแห้ง (Dry Chemical)</option>
-              <option value="ถังดับเพลิง ก๊าซ CO2">ถังดับเพลิง ก๊าซ CO2</option>
-              <option value="ไฟส่องสว่างฉุกเฉิน (Emergency Light)">ไฟส่องสว่างฉุกเฉิน (Emergency Light)</option>
+              <option value="ถังดับเพลิงสีแดง">ถังดับเพลิงสีแดง</option>
+              <option value="ถังดับเพลิงสีเขียว">ถังดับเพลิงสีเขียว</option>
+              <option value="ไฟฉุกเฉิน">ไฟฉุกเฉิน</option>
             </select>
           </div>
 
           <div class="auth-field-group">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <label for="quick-add-id" style="margin:0;">🏷️ รหัสประจำอุปกรณ์ (Asset ID):</label>
-              <span id="quick-add-id-auto-badge" style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡ รันต่ออัตโนมัติ</span>
+              <span id="quick-add-id-auto-badge"
+                style="font-size:0.75rem; color:#059669; font-weight:700; background:#ecfdf5; padding:2px 8px; border-radius:4px; border:1px solid #a7f3d0;">⚡
+                รันต่ออัตโนมัติ</span>
             </div>
             <input type="text" id="quick-add-id" class="auth-input" placeholder="เช่น PYH-FE-ER1-09" required>
           </div>
 
           <div class="auth-field-group">
             <label for="quick-add-location">📍 รายละเอียดจุดติดตั้ง:</label>
-            <input type="text" id="quick-add-location" class="auth-input" placeholder="เช่น หน้าห้องเอกซเรย์, โถงบันไดหนีไฟ" required>
+            <input type="text" id="quick-add-location" class="auth-input"
+              placeholder="เช่น หน้าห้องเอกซเรย์, โถงบันไดหนีไฟ" required>
           </div>
 
           <div style="display:flex; gap:10px; margin-top:20px;">
@@ -823,6 +990,7 @@
   <!-- แจ้งเตือนสถานะการย้ายพิกัดหมุด (Admin Map Toast) -->
   <div id="map-toast-notification" class="map-toast"></div>
 
-  <script type="module" src="app.js?v=2.4"></script>
+  <script type="module" src="app.js?v=5.3"></script>
 </body>
+
 </html>

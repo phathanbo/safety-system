@@ -1,536 +1,824 @@
 {
   "hospital": "โรงพยาบาลพยุหะคีรี",
-  "system": "Pyuha Smart Fire & Safety Cloud",
+  "system": "Phayuha hospital Smart Fire & Safety Cloud",
   "totalAssets": 48,
   "exportedAt": "2026-09-07T11:45:00+07:00",
   "assets": [
     {
       "assetId": "PYH-FE-HPC-01",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ห้องรังสีวินิจฉัย (X-Ray)",
       "status": "READY",
-      "floorCoord": [273, 340],
-      "campusCoord": { "lat": 15.45425, "lng": 100.1345 }
+      "floorCoord": [
+        273,
+        340
+      ],
+      "campusCoord": {
+        "lat": 15.45425,
+        "lng": 100.1345
+      }
     },
     {
       "assetId": "PYH-FE-HPC-02",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ห้องผ่าตัด",
       "status": "READY",
-      "floorCoord": [113, 608],
-      "campusCoord": { "lat": 15.45426, "lng": 100.13452 }
+      "floorCoord": [
+        113,
+        608
+      ],
+      "campusCoord": {
+        "lat": 15.45426,
+        "lng": 100.13452
+      }
     },
     {
       "assetId": "PYH-FE-HPC-03",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ห้องแล็บ 1 (ทางเข้า)",
       "status": "READY",
-      "floorCoord": [318, 784],
-      "campusCoord": { "lat": 15.45427, "lng": 100.13454 }
+      "floorCoord": [
+        318,
+        784
+      ],
+      "campusCoord": {
+        "lat": 15.45427,
+        "lng": 100.13454
+      }
     },
     {
       "assetId": "PYH-FE-HPC-04",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ห้องแล็บ 2 (ทางเข้า)",
       "status": "READY",
-      "floorCoord": [318, 806],
-      "campusCoord": { "lat": 15.45428, "lng": 100.13455 }
+      "floorCoord": [
+        318,
+        806
+      ],
+      "campusCoord": {
+        "lat": 15.45428,
+        "lng": 100.13455
+      }
     },
     {
       "assetId": "PYH-EM-HPC-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "โถงทางเดินหน้าห้องไอที / Server",
       "status": "READY",
-      "floorCoord": [384, 423],
-      "campusCoord": { "lat": 15.45429, "lng": 100.13456 }
+      "floorCoord": [
+        384,
+        423
+      ],
+      "campusCoord": {
+        "lat": 15.45429,
+        "lng": 100.13456
+      }
     },
     {
       "assetId": "PYH-EM-HPC-02",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "โถงทางเดินหน้าห้องเก็บฟิล์ม",
       "status": "READY",
-      "floorCoord": [359, 455],
-      "campusCoord": { "lat": 15.4543, "lng": 100.13457 }
+      "floorCoord": [
+        359,
+        455
+      ],
+      "campusCoord": {
+        "lat": 15.4543,
+        "lng": 100.13457
+      }
     },
     {
       "assetId": "PYH-EM-HPC-03",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "หน้าห้องทำคลอด (ติดห้องผ่าตัด)",
       "status": "READY",
-      "floorCoord": [129, 650],
-      "campusCoord": { "lat": 15.45431, "lng": 100.13458 }
+      "floorCoord": [
+        129,
+        650
+      ],
+      "campusCoord": {
+        "lat": 15.45431,
+        "lng": 100.13458
+      }
     },
     {
       "assetId": "PYH-EM-HPC-04",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ภายในห้องรอคลอด",
       "status": "READY",
-      "floorCoord": [231, 735],
-      "campusCoord": { "lat": 15.45432, "lng": 100.13459 }
+      "floorCoord": [
+        231,
+        735
+      ],
+      "campusCoord": {
+        "lat": 15.45432,
+        "lng": 100.13459
+      }
     },
     {
       "assetId": "PYH-EM-HPC-05",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารส่งเสริมสุขภาพ",
       "buildingId": "building_hpc",
       "floor": 1,
       "location": "ผนังหน้ากลุ่มงานเทคนิคการแพทย์",
       "status": "READY",
-      "floorCoord": [266, 754],
-      "campusCoord": { "lat": 15.45433, "lng": 100.1346 }
+      "floorCoord": [
+        266,
+        754
+      ],
+      "campusCoord": {
+        "lat": 15.45433,
+        "lng": 100.1346
+      }
     },
     {
       "assetId": "PYH-FE-IPD-01",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "เสาทางเดินหน้าทางเข้าหลัก (ตรงข้ามห้องพิเศษ 1-2)",
       "status": "READY",
-      "floorCoord": [239, 705],
-      "campusCoord": { "lat": 15.4544, "lng": 100.1348 }
+      "floorCoord": [
+        239,
+        705
+      ],
+      "campusCoord": {
+        "lat": 15.4544,
+        "lng": 100.1348
+      }
     },
     {
       "assetId": "PYH-FE-IPD-02",
-      "type": "ถังดับเพลิงสีเขียว (สารสะอาด Non-CFC)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "เสาทางเดินหน้าทางเข้าหลัก (คู่ถังแดง 01)",
       "status": "READY",
-      "floorCoord": [239, 695],
-      "campusCoord": { "lat": 15.45441, "lng": 100.13481 }
+      "floorCoord": [
+        239,
+        695
+      ],
+      "campusCoord": {
+        "lat": 15.45441,
+        "lng": 100.13481
+      }
     },
     {
       "assetId": "PYH-FE-IPD-03",
-      "type": "ถังดับเพลิงสีเขียว (สารสะอาด Non-CFC)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "หน้าห้องสงฆ์อาพาธ / ห้องผู้ป่วยทั่วไปฝั่งหลัง",
       "status": "READY",
-      "floorCoord": [273, 318],
-      "campusCoord": { "lat": 15.45442, "lng": 100.13482 }
+      "floorCoord": [
+        273,
+        318
+      ],
+      "campusCoord": {
+        "lat": 15.45442,
+        "lng": 100.13482
+      }
     },
     {
       "assetId": "PYH-FE-IPD-04",
-      "type": "ถังดับเพลิงสีเขียว (สารสะอาด Non-CFC)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "หน้าห้องผู้ป่วยแยกโรค (แถบล่าง)",
       "status": "READY",
-      "floorCoord": [203, 595],
-      "campusCoord": { "lat": 15.45443, "lng": 100.13483 }
+      "floorCoord": [
+        203,
+        595
+      ],
+      "campusCoord": {
+        "lat": 15.45443,
+        "lng": 100.13483
+      }
     },
     {
       "assetId": "PYH-EM-IPD-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "เสาผนังห้องผู้ป่วยทั่วไปฝั่งหน้า",
       "status": "READY",
-      "floorCoord": [369, 752],
-      "campusCoord": { "lat": 15.45444, "lng": 100.13484 }
+      "floorCoord": [
+        369,
+        752
+      ],
+      "campusCoord": {
+        "lat": 15.45444,
+        "lng": 100.13484
+      }
     },
     {
       "assetId": "PYH-EM-IPD-02",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "ทางเดินกลาง หน้าห้องพิเศษ 3",
       "status": "READY",
-      "floorCoord": [262, 580],
-      "campusCoord": { "lat": 15.45445, "lng": 100.13485 }
+      "floorCoord": [
+        262,
+        580
+      ],
+      "campusCoord": {
+        "lat": 15.45445,
+        "lng": 100.13485
+      }
     },
     {
       "assetId": "PYH-EM-IPD-03",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารผู้ป่วยใน (IPD)",
       "buildingId": "building_ipd",
       "floor": 1,
       "location": "ผนังห้องทำงานพยาบาล",
       "status": "READY",
-      "floorCoord": [360, 535],
-      "campusCoord": { "lat": 15.45446, "lng": 100.13486 }
+      "floorCoord": [
+        360,
+        535
+      ],
+      "campusCoord": {
+        "lat": 15.45446,
+        "lng": 100.13486
+      }
     },
     {
       "assetId": "PYH-FE-NSK-01",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารนิสิตคุณากร (Covid 19)",
       "buildingId": "building_nisit",
       "floor": 1,
       "location": "ทางเดินหน้าห้องทำงานพยาบาล (ตรงข้ามสุขา)",
       "status": "READY",
-      "floorCoord": [133, 825],
-      "campusCoord": { "lat": 15.4541, "lng": 100.1343 }
+      "floorCoord": [
+        133,
+        825
+      ],
+      "campusCoord": {
+        "lat": 15.4541,
+        "lng": 100.1343
+      }
     },
     {
       "assetId": "PYH-FE-NSK-02",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารนิสิตคุณากร (Covid 19)",
       "buildingId": "building_nisit",
       "floor": 1,
       "location": "มุมห้องผู้ป่วยโรคติดต่อ (ติดประตูทางหนีไฟทิศตะวันตก)",
       "status": "READY",
-      "floorCoord": [140, 282],
-      "campusCoord": { "lat": 15.45411, "lng": 100.13431 }
+      "floorCoord": [
+        140,
+        282
+      ],
+      "campusCoord": {
+        "lat": 15.45411,
+        "lng": 100.13431
+      }
     },
     {
       "assetId": "PYH-EM-NSK-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารนิสิตคุณากร (Covid 19)",
       "buildingId": "building_nisit",
       "floor": 1,
       "location": "ผนังห้องผู้ป่วยโรคติดต่อ (ข้างถังดับเพลิงสีแดง 02)",
       "status": "READY",
-      "floorCoord": [140, 300],
-      "campusCoord": { "lat": 15.45412, "lng": 100.13432 }
+      "floorCoord": [
+        140,
+        300
+      ],
+      "campusCoord": {
+        "lat": 15.45412,
+        "lng": 100.13432
+      }
     },
     {
       "assetId": "PYH-FE-ER2-01",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในห้องผู้อำนวยการ",
       "status": "READY",
-      "floorCoord": [117, 348],
-      "campusCoord": { "lat": 15.4545, "lng": 100.1346 }
+      "floorCoord": [
+        117,
+        348
+      ],
+      "campusCoord": {
+        "lat": 15.4545,
+        "lng": 100.1346
+      }
     },
     {
       "assetId": "PYH-FE-ER2-02",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในงานธุรการ",
       "status": "READY",
-      "floorCoord": [163, 465],
-      "campusCoord": { "lat": 15.45451, "lng": 100.13461 }
+      "floorCoord": [
+        163,
+        465
+      ],
+      "campusCoord": {
+        "lat": 15.45451,
+        "lng": 100.13461
+      }
     },
     {
       "assetId": "PYH-FE-ER2-03",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "งานการเงินและบัญชี",
       "status": "READY",
-      "floorCoord": [230, 566],
-      "campusCoord": { "lat": 15.45452, "lng": 100.13462 }
+      "floorCoord": [
+        230,
+        566
+      ],
+      "campusCoord": {
+        "lat": 15.45452,
+        "lng": 100.13462
+      }
     },
     {
       "assetId": "PYH-FE-ER2-04",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในกลุ่มงานบริหารทั่วไป",
       "status": "READY",
-      "floorCoord": [121, 698],
-      "campusCoord": { "lat": 15.45453, "lng": 100.13463 }
+      "floorCoord": [
+        121,
+        698
+      ],
+      "campusCoord": {
+        "lat": 15.45453,
+        "lng": 100.13463
+      }
     },
     {
       "assetId": "PYH-FE-ER2-05",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ทางเดินหน้าห้องรับรอง (จุดบันไดหนีไฟ)",
       "status": "READY",
-      "floorCoord": [324, 375],
-      "campusCoord": { "lat": 15.45454, "lng": 100.13464 }
+      "floorCoord": [
+        324,
+        375
+      ],
+      "campusCoord": {
+        "lat": 15.45454,
+        "lng": 100.13464
+      }
     },
     {
       "assetId": "PYH-EM-ER2-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ทางเดินหน้าห้องประชุม 2",
       "status": "READY",
-      "floorCoord": [329, 465],
-      "campusCoord": { "lat": 15.45455, "lng": 100.13465 }
+      "floorCoord": [
+        329,
+        465
+      ],
+      "campusCoord": {
+        "lat": 15.45455,
+        "lng": 100.13465
+      }
     },
     {
       "assetId": "PYH-EM-ER2-02",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในห้องประชุม 2 (ฝั่งซ้าย)",
       "status": "READY",
-      "floorCoord": [435, 485],
-      "campusCoord": { "lat": 15.45456, "lng": 100.13466 }
+      "floorCoord": [
+        435,
+        485
+      ],
+      "campusCoord": {
+        "lat": 15.45456,
+        "lng": 100.13466
+      }
     },
     {
       "assetId": "PYH-EM-ER2-03",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในห้องประชุม 2 (ฝั่งขวา)",
       "status": "READY",
-      "floorCoord": [435, 618],
-      "campusCoord": { "lat": 15.45457, "lng": 100.13467 }
+      "floorCoord": [
+        435,
+        618
+      ],
+      "campusCoord": {
+        "lat": 15.45457,
+        "lng": 100.13467
+      }
     },
     {
       "assetId": "PYH-EM-ER2-04",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในห้องประชุม 1 (ฝั่งซ้าย)",
       "status": "READY",
-      "floorCoord": [349, 718],
-      "campusCoord": { "lat": 15.45458, "lng": 100.13468 }
+      "floorCoord": [
+        349,
+        718
+      ],
+      "campusCoord": {
+        "lat": 15.45458,
+        "lng": 100.13468
+      }
     },
     {
       "assetId": "PYH-EM-ER2-05",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ภายในห้องประชุม 1 (ฝั่งขวา)",
       "status": "READY",
-      "floorCoord": [349, 930],
-      "campusCoord": { "lat": 15.45459, "lng": 100.13469 }
+      "floorCoord": [
+        349,
+        930
+      ],
+      "campusCoord": {
+        "lat": 15.45459,
+        "lng": 100.13469
+      }
     },
     {
       "assetId": "PYH-EM-ER2-06",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ผนังงานการเงินและบัญชี (ฝั่งทางเดินล่าง)",
       "status": "READY",
-      "floorCoord": [218, 590],
-      "campusCoord": { "lat": 15.4546, "lng": 100.1347 }
+      "floorCoord": [
+        218,
+        590
+      ],
+      "campusCoord": {
+        "lat": 15.4546,
+        "lng": 100.1347
+      }
     },
     {
       "assetId": "PYH-EM-ER2-07",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ทางเดินหน้าห้องไฟฟ้า (ข้างตู้ควบคุมไฟ)",
       "status": "READY",
-      "floorCoord": [231, 785],
-      "campusCoord": { "lat": 15.45461, "lng": 100.13471 }
+      "floorCoord": [
+        231,
+        785
+      ],
+      "campusCoord": {
+        "lat": 15.45461,
+        "lng": 100.13471
+      }
     },
     {
       "assetId": "PYH-EM-ER2-08",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นบน",
       "buildingId": "building_er_upper",
       "floor": 2,
       "location": "ทางเดินหน้าห้องสุขา (ทางลงบันไดหนีไฟ)",
       "status": "READY",
-      "floorCoord": [231, 850],
-      "campusCoord": { "lat": 15.45462, "lng": 100.13472 }
+      "floorCoord": [
+        231,
+        850
+      ],
+      "campusCoord": {
+        "lat": 15.45462,
+        "lng": 100.13472
+      }
     },
     {
       "assetId": "PYH-FE-ER1-01",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ทางเดินหน้าห้อง ER (หน้าห้องเก็บของ)",
       "status": "READY",
-      "floorCoord": [290, 430],
-      "campusCoord": { "lat": 15.4547, "lng": 100.1346 }
+      "floorCoord": [
+        290,
+        430
+      ],
+      "campusCoord": {
+        "lat": 15.4547,
+        "lng": 100.1346
+      }
     },
     {
       "assetId": "PYH-FE-ER1-02",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ประตูด้านหลัง (เสาตรงข้ามศูนย์วิทยุ/เปล)",
       "status": "READY",
-      "floorCoord": [121, 295],
-      "campusCoord": { "lat": 15.45471, "lng": 100.13461 }
+      "floorCoord": [
+        121,
+        295
+      ],
+      "campusCoord": {
+        "lat": 15.45471,
+        "lng": 100.13461
+      }
     },
     {
       "assetId": "PYH-FE-ER1-03",
-      "type": "ถังดับเพลิงสีแดง (เคมีแห้ง/CO2)",
+      "type": "ถังดับเพลิงสีแดง",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "หน้าประตูทางเข้าหลัก (ข้างห้องน้ำผู้พิการ)",
       "status": "READY",
-      "floorCoord": [293, 928],
-      "campusCoord": { "lat": 15.45472, "lng": 100.13462 }
+      "floorCoord": [
+        293,
+        928
+      ],
+      "campusCoord": {
+        "lat": 15.45472,
+        "lng": 100.13462
+      }
     },
     {
       "assetId": "PYH-FE-ER1-04",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "งานการพยาบาลผู้ป่วยอุบัติเหตุฯ (ห้อง ER จุด 1 ผนังล่าง)",
       "status": "READY",
-      "floorCoord": [310, 518],
-      "campusCoord": { "lat": 15.45473, "lng": 100.13463 }
+      "floorCoord": [
+        310,
+        518
+      ],
+      "campusCoord": {
+        "lat": 15.45473,
+        "lng": 100.13463
+      }
     },
     {
       "assetId": "PYH-FE-ER1-05",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "งานการพยาบาลผู้ป่วยอุบัติเหตุฯ (ห้อง ER จุด 2 ผนังขวา)",
       "status": "READY",
-      "floorCoord": [352, 628],
-      "campusCoord": { "lat": 15.45474, "lng": 100.13464 }
+      "floorCoord": [
+        352,
+        628
+      ],
+      "campusCoord": {
+        "lat": 15.45474,
+        "lng": 100.13464
+      }
     },
     {
       "assetId": "PYH-FE-ER1-06",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ภายในห้องศูนย์วิทยุ/เปล",
       "status": "READY",
-      "floorCoord": [214, 418],
-      "campusCoord": { "lat": 15.45475, "lng": 100.13465 }
+      "floorCoord": [
+        214,
+        418
+      ],
+      "campusCoord": {
+        "lat": 15.45475,
+        "lng": 100.13465
+      }
     },
     {
       "assetId": "PYH-FE-ER1-07",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ทางเดินหน้าห้องเวรเปล",
       "status": "READY",
-      "floorCoord": [391, 398],
-      "campusCoord": { "lat": 15.45476, "lng": 100.13466 }
+      "floorCoord": [
+        391,
+        398
+      ],
+      "campusCoord": {
+        "lat": 15.45476,
+        "lng": 100.13466
+      }
     },
     {
       "assetId": "PYH-FE-ER1-08",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ผนังห้องสังเกตอาการ (ฝั่งติดห้องพักแพทย์)",
       "status": "READY",
-      "floorCoord": [341, 784],
-      "campusCoord": { "lat": 15.45477, "lng": 100.13467 }
+      "floorCoord": [
+        341,
+        784
+      ],
+      "campusCoord": {
+        "lat": 15.45477,
+        "lng": 100.13467
+      }
     },
     {
       "assetId": "PYH-EM-ER1-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "งานการพยาบาลผู้ป่วยอุบัติเหตุฯ (ห้อง ER จุดผนังบน)",
       "status": "READY",
-      "floorCoord": [440, 545],
-      "campusCoord": { "lat": 15.45478, "lng": 100.13468 }
+      "floorCoord": [
+        440,
+        545
+      ],
+      "campusCoord": {
+        "lat": 15.45478,
+        "lng": 100.13468
+      }
     },
     {
       "assetId": "PYH-EM-ER1-02",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ทางเดินหน้ากลุ่มงานประกันสุขภาพฯ",
       "status": "READY",
-      "floorCoord": [214, 558],
-      "campusCoord": { "lat": 15.45479, "lng": 100.13469 }
+      "floorCoord": [
+        214,
+        558
+      ],
+      "campusCoord": {
+        "lat": 15.45479,
+        "lng": 100.13469
+      }
     },
     {
       "assetId": "PYH-EM-ER1-03",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ภายในห้อง X-ray",
       "status": "READY",
-      "floorCoord": [239, 678],
-      "campusCoord": { "lat": 15.4548, "lng": 100.1347 }
+      "floorCoord": [
+        239,
+        678
+      ],
+      "campusCoord": {
+        "lat": 15.4548,
+        "lng": 100.1347
+      }
     },
     {
       "assetId": "PYH-EM-ER1-04",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ผนังห้องสังเกตอาการ (ฝั่งติดสุขา)",
       "status": "READY",
-      "floorCoord": [439, 725],
-      "campusCoord": { "lat": 15.45481, "lng": 100.13471 }
+      "floorCoord": [
+        439,
+        725
+      ],
+      "campusCoord": {
+        "lat": 15.45481,
+        "lng": 100.13471
+      }
     },
     {
       "assetId": "PYH-EM-ER1-05",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "อาคารอุบัติเหตุ ชั้นล่าง",
       "buildingId": "building_er_lower",
       "floor": 1,
       "location": "ทางเดินหน้าประตูทางเข้าหลัก (ข้างตู้ไฟ)",
       "status": "READY",
-      "floorCoord": [313, 910],
-      "campusCoord": { "lat": 15.45482, "lng": 100.13472 }
+      "floorCoord": [
+        313,
+        910
+      ],
+      "campusCoord": {
+        "lat": 15.45482,
+        "lng": 100.13472
+      }
     },
     {
       "assetId": "PYH-FE-OPD-01",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "ตึก OPD (ห้องเบาหวาน)",
       "buildingId": "building_opd_dm",
       "floor": 1,
       "location": "คลินิกพิเศษ (ผนังฝั่งทางหนีไฟทิศตะวันตก)",
       "status": "READY",
-      "floorCoord": [377, 495],
-      "campusCoord": { "lat": 15.45435, "lng": 100.1347 }
+      "floorCoord": [
+        377,
+        495
+      ],
+      "campusCoord": {
+        "lat": 15.45435,
+        "lng": 100.1347
+      }
     },
     {
       "assetId": "PYH-FE-OPD-02",
-      "type": "ถังดับเพลิงสีเขียว (Clean Agent)",
+      "type": "ถังดับเพลิงสีเขียว",
       "building": "ตึก OPD (ห้องเบาหวาน)",
       "buildingId": "building_opd_dm",
       "floor": 1,
       "location": "คลินิกพิเศษ (ผนังติดคลินิก ARI ทิศตะวันออก)",
       "status": "READY",
-      "floorCoord": [397, 875],
-      "campusCoord": { "lat": 15.45436, "lng": 100.13471 }
+      "floorCoord": [
+        397,
+        875
+      ],
+      "campusCoord": {
+        "lat": 15.45436,
+        "lng": 100.13471
+      }
     },
     {
       "assetId": "PYH-EM-OPD-01",
-      "type": "ไฟฉุกเฉิน (Emergency Light)",
+      "type": "ไฟฉุกเฉิน",
       "building": "ตึก OPD (ห้องเบาหวาน)",
       "buildingId": "building_opd_dm",
       "floor": 1,
       "location": "ทางเดินเชื่อมด้านหน้าห้องตรวจเบาหวาน",
       "status": "READY",
-      "floorCoord": [343, 680],
-      "campusCoord": { "lat": 15.45437, "lng": 100.13472 }
+      "floorCoord": [
+        343,
+        680
+      ],
+      "campusCoord": {
+        "lat": 15.45437,
+        "lng": 100.13472
+      }
     }
   ]
 }

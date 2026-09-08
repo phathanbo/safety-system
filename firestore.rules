@@ -1,0 +1,79 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ฟังก์ชันช่วยเหลือสำหรับตรวจสอบสถานะ Login
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ฟังก์ชันดึงโปรไฟล์ผู้ใช้จาก collection system_users
+    function getUserData() {
+      return get(/databases/$(database)/documents/system_users/$(request.auth.uid)).data;
+    }
+
+    // ฟังก์ชันตรวจสอบระดับสิทธิ์ (Role Check จาก Custom Claims หรือ Users Collection)
+    function hasRole(role) {
+      return isAuthenticated() && 
+        (request.auth.token.role == role || getUserData().role == role);
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isExecutive() {
+      return hasRole('executive') || isAdmin();
+    }
+
+    function isChefInspector() {
+      return hasRole('chef_inspector') || hasRole('chef inspector') || isAdmin();
+    }
+
+    function isInspector() {
+      return hasRole('inspector') || isChefInspector();
+    }
+
+    // ========================================================
+    // 1. ทะเบียนอุปกรณ์และครุภัณฑ์ (Assets)
+    // ========================================================
+    match /assets/{assetId} {
+      allow read: if true;
+      allow create, delete: if isInspector();
+      allow update: if isInspector();
+    }
+
+    // ========================================================
+    // 2. บันทึกประวัติการตรวจเช็ก (Inspection Logs)
+    // ========================================================
+    match /inspection_logs/{logId} {
+      allow read: if true;
+      allow create: if isInspector();
+      allow update, delete: if isAdmin();
+    }
+
+    // ========================================================
+    // 3. ตราประทับและคำสั่งการดิจิทัล (System State / Certifications)
+    // ========================================================
+    match /system_state/{stateId} {
+      allow read: if true;
+
+      // ตรวจสอบการลงนามแยกตามระดับสิทธิ์ของผู้ใช้
+      allow write: if isAuthenticated() && (
+        (stateId == 'report_certifications' && isInspector()) ||
+        (stateId == 'report_certifications' && isChefInspector()) ||
+        (stateId == 'report_certifications' && isExecutive()) ||
+        isAdmin()
+      );
+    }
+
+    // ========================================================
+    // 4. บัญชีผู้ใช้และสิทธิ์ในระบบ (System Users)
+    // ========================================================
+    match /system_users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+  }
+}
