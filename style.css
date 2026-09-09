@@ -899,6 +899,29 @@ tr:hover {
 }
 
 /* Role-based Tab & Feature Visibility Guards */
+body.role-guest #tab-nav-scanner,
+body.role-guest #tab-nav-register,
+body.role-guest #tab-nav-backup,
+body.role-guest #tab-nav-admin,
+body.role-guest #btn-change-officer,
+body.role-guest #btn-simulate-full,
+body.role-guest #btn-print-executive-report,
+body.role-guest #btn-print-all-qr,
+body.role-guest #admin-delete-all-btn,
+body.role-guest #admin-map-drag-notice,
+body.role-guest #admin-add-asset-btn,
+body.role-guest #btn-edit-guide,
+body.role-guest #report-controls-card {
+  display: none !important;
+}
+
+body.role-guest #tab-nav-dashboard,
+body.role-guest #tab-nav-assets,
+body.role-guest #tab-nav-history,
+body.role-guest #tab-nav-report {
+  display: inline-block !important;
+}
+
 body.role-executive #tab-nav-scanner,
 body.role-executive #tab-nav-register,
 body.role-executive #tab-nav-backup,

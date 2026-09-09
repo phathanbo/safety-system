@@ -150,30 +150,106 @@ let currentMapMode = 'building_er_lower'; // เริ่มต้นที่�
 
 
 // ==========================================
-// 0. Auth Guard — บังคับ Login ก่อนเข้าใช้
+// 0. Auth Guard — บังคับ Login ก่อนเข้าใช้ (พร้อม Session Timeout 1 ชม. & Activity Tracking)
 // ==========================================
 
-// ตรวจ session ที่ยังมีอยู่ (เก็บใน localStorage เพื่อให้จำชื่อผู้ใช้และสิทธิ์แม้จะกด F5 หรือปิดแท็บ)
+const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 1 ชั่วโมง (60 นาที)
+
+// ตรวจ session ที่ยังมีอยู่ และเช็คว่าหมดอายุหรือยัง (1 ชม. นับจากกิจกรรมล่าสุด)
 function getSession() {
   try {
     const raw = localStorage.getItem('pyh_active_session');
-    if (raw) return JSON.parse(raw);
-    const officer = localStorage.getItem('pyh_officer');
-    const role = localStorage.getItem('pyh_role');
-    if (officer && role) return { officer, role };
-    return null;
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    if (!session || !session.officer) return null;
+
+    const now = Date.now();
+    // ถ้ามี lastActivity ให้ตรวจ expiration
+    if (session.lastActivity) {
+      if (now - session.lastActivity > SESSION_TIMEOUT_MS) {
+        // Session หมดอายุแล้ว!
+        console.warn("Session expired due to inactivity (> 1 hour).");
+        clearSession();
+        return null;
+      }
+    }
+
+    // อัปเดต timestamp กิจกรรมล่าสุด
+    updateSessionActivity();
+    return session;
   } catch (e) { return null; }
 }
+
 function setSession(officer, role) {
-  localStorage.setItem('pyh_active_session', JSON.stringify({ officer, role }));
+  const now = Date.now();
+  const sessionData = {
+    officer,
+    role,
+    loginAt: now,
+    lastActivity: now
+  };
+  localStorage.setItem('pyh_active_session', JSON.stringify(sessionData));
   localStorage.setItem('pyh_officer', officer);
   localStorage.setItem('pyh_role', role);
 }
+
 function clearSession() {
   localStorage.removeItem('pyh_active_session');
   localStorage.removeItem('pyh_officer');
   localStorage.removeItem('pyh_role');
 }
+
+// อัปเดตเวลากิจกรรมล่าสุด (Activity Tracking)
+let _lastActivityUpdate = 0;
+function updateSessionActivity() {
+  const now = Date.now();
+  // throttle การเขียน localStorage ไม่ให้เขียนถี่เกินไป (ทุก 10 วินาที)
+  if (now - _lastActivityUpdate < 10000) return;
+  _lastActivityUpdate = now;
+
+  try {
+    const raw = localStorage.getItem('pyh_active_session');
+    if (raw) {
+      const session = JSON.parse(raw);
+      if (session && session.officer) {
+        session.lastActivity = now;
+        localStorage.setItem('pyh_active_session', JSON.stringify(session));
+      }
+    }
+  } catch (e) { }
+}
+
+// ตรวจสอบการหมดอายุของ Session เป็นระยะ (Periodic Expiration Checker)
+function checkSessionExpiration() {
+  try {
+    const raw = localStorage.getItem('pyh_active_session');
+    if (!raw) return;
+    const session = JSON.parse(raw);
+    if (session && session.lastActivity) {
+      if (Date.now() - session.lastActivity > SESSION_TIMEOUT_MS) {
+        console.warn("Session expired! Logging out automatically.");
+        clearSession();
+        currentOfficer = '';
+        currentUserRole = '';
+        if (typeof applyUserSession === 'function') {
+          applyUserSession('ผู้เยี่ยมชม (Guest)', 'guest');
+        }
+        alert("⏰ เซสชันของคุณหมดอายุเนื่องจากไม่มีการใช้งานเกิน 1 ชั่วโมง\nระบบได้ออกจากระบบเพื่อความปลอดภัย กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+        showLoginScreen();
+      }
+    }
+  } catch (e) { }
+}
+
+// ตั้ง Interval ตรวจสอบทุก 1 นาที
+setInterval(checkSessionExpiration, 60 * 1000);
+
+// ดักจับ User Activity (คลิก, แตะหน้าจอ, กดปุ่มคีย์บอร์ด, เลื่อนหน้าจอ) เพื่อรีเฟรชเวลา
+['click', 'keydown', 'touchstart', 'scroll'].forEach(eventType => {
+  window.addEventListener(eventType, () => {
+    updateSessionActivity();
+  }, { passive: true });
+});
 
 function showLoginScreen() {
   const screen = document.getElementById('login-screen');
@@ -282,15 +358,36 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUserRole = session.role;
     applyUserSession(session.officer, session.role);
   } else {
-    // Guest — แสดงชื่อเป็น "ผู้เยี่ยมชม"
-    const nameEl = document.getElementById('display-user-name');
-    const roleEl = document.getElementById('display-user-role');
-    if (nameEl) nameEl.innerText = 'ผู้เยี่ยมชม (Guest)';
-    if (roleEl) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+    // Guest — กำหนดสิทธิ์และซ่อนปุ่มการกระทำทั้งหมด
+    currentOfficer = '';
+    currentUserRole = 'guest';
+    applyUserSession('ผู้เยี่ยมชม (Guest)', 'guest');
   }
 
   // โหลดข้อมูลและแสดงแอปทันที (ไม่บังคับ login)
   initAssets();
+
+  // เรนเดอร์คู่มือขั้นตอนการตรวจ
+  if (typeof window.renderInspectionGuideUI === 'function') {
+    window.renderInspectionGuideUI();
+  }
+
+  // โหลดคู่มือฉบับอัปเดตจาก Firestore (ถ้ามี)
+  if (isFirebaseReady() && db) {
+    try {
+      getDoc(doc(db, "system_configs", "inspection_guide")).then(docSnap => {
+        if (docSnap.exists()) {
+          const cloudGuide = docSnap.data();
+          if (cloudGuide && cloudGuide.feSteps && cloudGuide.emSteps) {
+            localStorage.setItem('pyh_inspection_guide', JSON.stringify(cloudGuide));
+            if (typeof window.renderInspectionGuideUI === 'function') {
+              window.renderInspectionGuideUI();
+            }
+          }
+        }
+      }).catch(() => {});
+    } catch (e) {}
+  }
 });
 
 // ออกจากระบบ — ล้าง session แล้วแสดงหน้า Login ใหม่
@@ -302,11 +399,15 @@ window.logoutUser = async function () {
   if (isFirebaseReady() && auth) {
     try { await signOut(auth); } catch (e) { }
   }
-  // กลับเป็น Guest Mode
-  const nameEl = document.getElementById('display-user-name');
-  const roleEl = document.getElementById('display-user-role');
-  if (nameEl) nameEl.innerText = 'ผู้เยี่ยมชม (Guest)';
-  if (roleEl) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+  // กลับเป็น Guest Mode อย่างสมบูรณ์
+  if (typeof applyUserSession === 'function') {
+    applyUserSession('ผู้เยี่ยมชม (Guest)', 'guest');
+  } else {
+    const nameEl = document.getElementById('display-user-name');
+    const roleEl = document.getElementById('display-user-role');
+    if (nameEl) nameEl.innerText = 'ผู้เยี่ยมชม (Guest)';
+    if (roleEl) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+  }
 };
 
 // ==========================================
@@ -624,6 +725,7 @@ window.changeMapLevel = function () {
 
   if (selectedMode === 'campus') {
     map.options.crs = L.CRS.EPSG3857;
+    map.options.maxBoundsViscosity = 0.8;
     
     // ขอบเขตพิกัดจริงของโรงพยาบาลพยุหะคีรีตามที่ระบุ:
     // จุดอ้างอิง: [15.4765487, 100.1371425] ถึง [15.4776960, 100.1384024]
@@ -648,15 +750,20 @@ window.changeMapLevel = function () {
     // เล็งจุดกึ่งกลางพื้นที่โรงพยาบาลพยุหะคีรี
     map.setView([15.47712, 100.13777], 18);
   } else {
-    map.setMaxBounds(null); // ปลดล็อก Bounds เมื่อสลับไปดูผังอาคาร (ชั้น 1, ชั้น 2 ฯลฯ)
-    map.setMinZoom(-1);
-    map.setMaxZoom(2);
     const cfg = floorConfigs[selectedMode];
     if (!cfg) return;
 
     map.options.crs = L.CRS.Simple;
     currentOverlayLayer = L.imageOverlay(cfg.imageUrl, cfg.bounds).addTo(map);
+    
+    // ล็อคขอบเขตไม่ให้เลื่อนหลุดผัง และคำนวณการย่อสุดให้พอดีจอพอดี
+    map.options.maxBoundsViscosity = 1.0;
+    map.setMaxBounds(cfg.bounds);
+    map.setMaxZoom(4); // ขยายได้เต็มที่ระดับ 4 เพื่อส่องดูรายละเอียดชัดเจน
+    
     map.fitBounds(cfg.bounds);
+    const fitZoom = map.getBoundsZoom(cfg.bounds);
+    map.setMinZoom(fitZoom); // ล็อคระดับย่อสุดให้หยุดที่พอดีกับหน้าจอ ไม่หลุดขอบ
   }
 
   renderMapPins();
@@ -1354,6 +1461,181 @@ window.submitManualScanId = function () {
   handleScanned(assetId);
 };
 
+const DEFAULT_INSPECTION_GUIDE = {
+  feSteps: [
+    "<b>ตรวจสอบสภาพภายนอก:</b> ตัวถังต้องไม่บุบ ไม่ผุกร่อน ไม่เป็นสนิม คันบีบและด้ามจับมั่นคง",
+    "<b>ตรวจสอบสลักล็อก & ซีลรัด:</b> สลักนิรภัย (Pull Pin) และซีลล็อกพลาสติกต้องอยู่ในสภาพสมบูรณ์ ไม่หลุดหาย",
+    "<b>ตรวจสอบสายฉีด & หัวฉีด:</b> สายยางไม่แตกกรอบ ไม่ฉีกขาด และไม่มีเศษขยะหรือแมลงอุดตันในปากกระบอกฉีด",
+    "<b>ตรวจเกจวัดแรงดัน:</b> เข็มวัดแรงดันต้องชี้อยู่ใน <b>\"แถบสีเขียว\" (ปกติ)</b> หากตกแถบแดงแสดงว่าแรงดันรั่วซึม",
+    "<b>ตรวจพื้นที่การติดตั้ง:</b> ไม่มีสิ่งของตั้งวางกีดขวาง ต้องสามารถเข้าถึงและหยิบใช้งานได้ทันทีใน 5 วินาที"
+  ],
+  emSteps: [
+    "<b>ตรวจสอบตัวเครื่อง & แหล่งจ่ายไฟ:</b> โครงสร้างโคมไฟไม่แตกร้าว เสียบปลั๊กแน่นหนา สายไฟไม่มีรอยหนูกัดแทะ",
+    "<b>ตรวจสอบไฟแสดงผล (AC / On):</b> หลอดไฟสัญญาณสีเขียว/แดง (AC Indicator) ต้องติดสว่าง บ่งบอกว่ามีกระแสไฟเข้าชาร์จแบตเตอรี่",
+    "<b>ทดสอบระบบสำรองไฟ (Push to Test):</b> กดปุ่ม <b>\"TEST\"</b> ค้างไว้ประมาณ 5-10 วินาที เพื่อจำลองสถานการณ์ไฟดับ",
+    "<b>ประเมินความสว่าง:</b> หลอดไฟ LED ต้อง <b>ติดสว่างพร้อมกันทั้ง 2 ดวง</b> แสงไฟไม่กะพริบหรือริบหรี่",
+    "<b>ปรับทิศทางโคมไฟ:</b> ปรับหน้าโคมให้ส่องสว่างไปยังเส้นทางหนีไฟ ป้ายทางออก หรือโถงบันไดหนีไฟอย่างชัดเจน"
+  ],
+  updatedAt: new Date().toISOString()
+};
+
+function getStoredInspectionGuide() {
+  try {
+    const raw = localStorage.getItem('pyh_inspection_guide');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.feSteps && parsed.emSteps) return parsed;
+    }
+  } catch (e) { }
+  return DEFAULT_INSPECTION_GUIDE;
+}
+
+window.renderInspectionGuideUI = function () {
+  const container = document.getElementById('inspection-guide-content');
+  if (!container) return;
+
+  const guide = getStoredInspectionGuide();
+  const feHtml = guide.feSteps.map(step => `<li>${step}</li>`).join('');
+  const emHtml = guide.emSteps.map(step => `<li>${step}</li>`).join('');
+
+  container.innerHTML = `
+    <!-- 1. ขั้นตอนตรวจถังดับเพลิง -->
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+      <div style="font-weight:700; color:#b91c1c; font-size:0.92rem; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <span>🧯 ขั้นตอนการตรวจถังดับเพลิง (Fire Extinguisher)</span>
+      </div>
+      <ol style="margin:0; padding-left:20px; font-size:0.84rem; color:#334155; line-height:1.65;">
+        ${feHtml}
+      </ol>
+    </div>
+
+    <!-- 2. ขั้นตอนตรวจโคมไฟฉุกเฉิน -->
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+      <div style="font-weight:700; color:#0284c7; font-size:0.92rem; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <span>💡 ขั้นตอนการตรวจไฟฉุกเฉิน (Emergency Light)</span>
+      </div>
+      <ol style="margin:0; padding-left:20px; font-size:0.84rem; color:#334155; line-height:1.65;">
+        ${emHtml}
+      </ol>
+    </div>
+  `;
+};
+
+window.openEditGuideModal = function () {
+  if (!requireLogin('แก้ไขคู่มือขั้นตอนการตรวจ')) return;
+  const guide = getStoredInspectionGuide();
+  const feArea = document.getElementById('edit-guide-fe');
+  const emArea = document.getElementById('edit-guide-em');
+  const modal = document.getElementById('edit-guide-modal');
+
+  // แปลง array กลับเป็น text ทีละบรรทัด (ตัด tag HTML หยาบๆ ให้แก้ไขง่าย)
+  if (feArea) {
+    feArea.value = guide.feSteps.map(s => s.replace(/<[^>]*>/g, '')).join('\n');
+  }
+  if (emArea) {
+    emArea.value = guide.emSteps.map(s => s.replace(/<[^>]*>/g, '')).join('\n');
+  }
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeEditGuideModal = function () {
+  const modal = document.getElementById('edit-guide-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitEditGuide = async function () {
+  if (!requireLogin('แก้ไขคู่มือขั้นตอนการตรวจ')) return;
+  const feArea = document.getElementById('edit-guide-fe');
+  const emArea = document.getElementById('edit-guide-em');
+  const submitBtn = document.getElementById('edit-guide-submit-btn');
+
+  const feLines = (feArea ? feArea.value : '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const emLines = (emArea ? emArea.value : '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  if (feLines.length === 0 || emLines.length === 0) {
+    alert("กรุณาระบุขั้นตอนการตรวจอย่างน้อยประเภทละ 1 ข้อ");
+    return;
+  }
+
+  // แปลงข้อความให้มีตัวหนาในคำแรก (ก่อนเครื่องหมายโคลอน :)
+  const formatStep = (line) => {
+    if (line.includes(':')) {
+      const parts = line.split(':');
+      return `<b>${parts[0].trim()}:</b> ${parts.slice(1).join(':').trim()}`;
+    }
+    return line;
+  };
+
+  const newGuide = {
+    feSteps: feLines.map(formatStep),
+    emSteps: emLines.map(formatStep),
+    updatedAt: new Date().toISOString(),
+    updatedBy: currentOfficer || 'เจ้าหน้าที่'
+  };
+
+  try {
+    if (submitBtn) {
+      submitBtn.innerText = "กำลังบันทึก...";
+      submitBtn.disabled = true;
+    }
+
+    localStorage.setItem('pyh_inspection_guide', JSON.stringify(newGuide));
+
+    // ซิงก์ขึ้น Firestore (ถ้าพร้อมใช้งาน)
+    if (isFirebaseReady() && db) {
+      try {
+        await setDoc(doc(db, "system_configs", "inspection_guide"), {
+          ...newGuide,
+          timestamp: serverTimestamp()
+        });
+      } catch (cloudErr) {
+        console.warn("Firestore sync guide warning:", cloudErr);
+      }
+    }
+
+    renderInspectionGuideUI();
+    closeEditGuideModal();
+    alert("✅ บันทึกและอัปเดตคู่มือขั้นตอนวิธีการตรวจเช็กเรียบร้อยแล้ว");
+
+  } catch (err) {
+    alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+  } finally {
+    if (submitBtn) {
+      submitBtn.innerText = "💾 บันทึกคู่มือ";
+      submitBtn.disabled = false;
+    }
+  }
+};
+
+window.resetGuideToDefault = function () {
+  if (!confirm("ต้องการรีเซ็ตขั้นตอนและคู่มือตรวจเช็กกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) return;
+  const feArea = document.getElementById('edit-guide-fe');
+  const emArea = document.getElementById('edit-guide-em');
+  if (feArea) {
+    feArea.value = DEFAULT_INSPECTION_GUIDE.feSteps.map(s => s.replace(/<[^>]*>/g, '')).join('\n');
+  }
+  if (emArea) {
+    emArea.value = DEFAULT_INSPECTION_GUIDE.emSteps.map(s => s.replace(/<[^>]*>/g, '')).join('\n');
+  }
+};
+
+window.toggleInspectionGuide = function () {
+  const content = document.getElementById('inspection-guide-content');
+  const txt = document.getElementById('guide-toggle-text');
+  const icon = document.getElementById('guide-toggle-icon');
+  if (!content) return;
+
+  if (content.style.display === 'none') {
+    content.style.display = 'grid';
+    if (txt) txt.innerText = 'ซ่อนคู่มือ';
+    if (icon) icon.innerText = '▲';
+  } else {
+    content.style.display = 'none';
+    if (txt) txt.innerText = 'แสดงขั้นตอนวิธีตรวจ';
+    if (icon) icon.innerText = '▼';
+  }
+};
+
 window.stopScanner = function () {
   if (html5QrCode && html5QrCode.isScanning) {
     html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => { });
@@ -1586,6 +1868,7 @@ function readFileAsDataURL(file) {
 let registerMap = null;
 let registerMarker = null;
 let registerOverlayLayer = null;
+let registerExistingMarkers = [];
 
 window.initRegisterMap = function () {
   const regMapElem = document.getElementById('register-map');
@@ -1608,6 +1891,61 @@ window.initRegisterMap = function () {
   window.updateRegisterMapFloor();
 };
 
+window.renderRegisterExistingMarkers = function () {
+  if (!registerMap) return;
+
+  // ล้างหมุดอุปกรณ์เดิมออกก่อน
+  registerExistingMarkers.forEach(m => {
+    if (registerMap.hasLayer(m)) registerMap.removeLayer(m);
+  });
+  registerExistingMarkers = [];
+
+  const buildingSelect = document.getElementById('reg-building-select');
+  if (!buildingSelect) return;
+  const buildingId = buildingSelect.value;
+
+  // กรองอุปกรณ์เดิมที่อยู่ในอาคารนี้และมี floorCoord
+  const existingAssets = (assetsList || []).filter(a => a.buildingId === buildingId && a.floorCoord && Array.isArray(a.floorCoord));
+
+  // อัปเดตข้อความสถิติอุปกรณ์เดิม
+  const countBadge = document.getElementById('reg-existing-count-badge');
+  if (countBadge) {
+    countBadge.innerText = `📦 มีอุปกรณ์เดิมในอาคารนี้ ${existingAssets.length} จุด`;
+  }
+
+  existingAssets.forEach(item => {
+    const isReady = item.status === 'READY';
+    const statusColor = isReady ? '#16a34a' : '#dc2626';
+
+    const existingIcon = L.divIcon({
+      html: `
+        <div style="background:${statusColor}; border:2px solid #ffffff; box-shadow:0 0 6px rgba(0,0,0,0.45); width:14px; height:14px; border-radius:50%; opacity:0.88;" title="[อุปกรณ์เดิม] ${item.assetId} - ${item.location}"></div>
+      `,
+      className: 'existing-asset-pin-container',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    const m = L.marker(item.floorCoord, {
+      icon: existingIcon,
+      interactive: true,
+      zIndexOffset: 10
+    }).addTo(registerMap);
+
+    m.bindPopup(`
+      <div style="font-size:12px; line-height:1.4;">
+        <span style="display:inline-block; background:#f1f5f9; color:#475569; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; border:1px solid #cbd5e1; margin-bottom:4px;">📌 อุปกรณ์เดิมในระบบ</span><br>
+        <b style="color:#0f172a;">${item.assetId}</b><br>
+        <span style="color:#334155;">${item.type || 'อุปกรณ์ความปลอดภัย'}</span><br>
+        <span style="color:#64748b; font-size:11px;">จุดติดตั้ง: ${item.location || '-'} (ชั้น ${item.floor || 1})</span><br>
+        <span style="color:${statusColor}; font-weight:600; font-size:11px;">สถานะ: ${isReady ? 'พร้อมใช้งาน' : 'ต้องตรวจสอบ/ชำรุด'}</span>
+      </div>
+    `);
+
+    registerExistingMarkers.push(m);
+  });
+};
+
 window.updateRegisterMapFloor = function () {
   if (!registerMap) return;
   const buildingSelect = document.getElementById('reg-building-select');
@@ -1621,12 +1959,24 @@ window.updateRegisterMapFloor = function () {
   }
 
   registerOverlayLayer = L.imageOverlay(cfg.imageUrl, cfg.bounds).addTo(registerMap);
+  registerMap.options.maxBoundsViscosity = 1.0;
+  registerMap.setMaxBounds(cfg.bounds);
+  registerMap.setMaxZoom(3);
   registerMap.fitBounds(cfg.bounds);
+  const regFitZoom = registerMap.getBoundsZoom(cfg.bounds);
+  registerMap.setMinZoom(regFitZoom);
+
+  // แสดงหมุดอุปกรณ์เดิมที่มีอยู่ในอาคารนี้
+  window.renderRegisterExistingMarkers();
 
   const curY = parseInt(document.getElementById('reg-coord-y').value) || 280;
   const curX = parseInt(document.getElementById('reg-coord-x').value) || 500;
   setRegisterCoords(curY, curX);
-  setTimeout(() => registerMap.invalidateSize(), 250);
+  setTimeout(() => {
+    registerMap.invalidateSize();
+    const updatedZoom = registerMap.getBoundsZoom(cfg.bounds);
+    registerMap.setMinZoom(updatedZoom);
+  }, 250);
 };
 
 function setRegisterCoords(y, x) {
@@ -1644,16 +1994,17 @@ function setRegisterCoords(y, x) {
 
   if (registerMap) {
     const pinIcon = L.divIcon({
-      html: '<div class="admin-draggable-pin" style="background:#0284c7; border:2px solid #ffffff; box-shadow:0 0 8px rgba(0,0,0,0.5); width:20px; height:20px; border-radius:50%; cursor:grab;"></div>',
+      html: '<div class="admin-draggable-pin" style="background:#0284c7; border:2.5px solid #ffffff; box-shadow:0 0 10px rgba(2,132,199,0.7); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:bold; cursor:grab;">★</div>',
       className: 'custom-pin-container',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
     });
 
     registerMarker = L.marker([y, x], {
       icon: pinIcon,
       draggable: true,
-      title: 'คลิกลากเพื่อกำหนดจุดติดตั้ง'
+      zIndexOffset: 1000,
+      title: 'หมุดอุปกรณ์ใหม่ (คลิกลากเพื่อกำหนดตำแหน่งติดตั้ง)'
     }).addTo(registerMap);
 
     registerMarker.on('dragend', function (e) {
@@ -1745,6 +2096,9 @@ if (regForm) {
 
     updateDashboardUI();
     renderMapPins();
+    if (typeof window.renderRegisterExistingMarkers === 'function') {
+      window.renderRegisterExistingMarkers();
+    }
     alert(`ลงทะเบียนอุปกรณ์ ${assetId} สำเร็จ! พร้อมพิมพ์สติกเกอร์`);
 
     document.getElementById('reg-location').value = '';
@@ -1867,6 +2221,21 @@ window.renderAssetListTable = function () {
       }
     }
 
+    // ปุ่มแก้ไขข้อมูลอุปกรณ์ (สำหรับช่าง, ผู้ตรวจ, และแอดมิน)
+    let editBtnHtml = '';
+    if (currentUserRole !== 'guest' && currentUserRole !== 'executive') {
+      editBtnHtml = `
+        <button onclick="openEditAssetModal('${a.assetId}')"
+          title="แก้ไขข้อมูลอุปกรณ์ชิ้นนี้"
+          style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; border-radius:6px;
+                 padding:4px 9px; font-size:0.75rem; cursor:pointer; font-weight:600; white-space:nowrap; transition:all 0.15s;"
+          onmouseenter="this.style.background='#dcfce7'"
+          onmouseleave="this.style.background='#f0fdf4'">
+          ✏️ แก้ไข
+        </button>
+      `;
+    }
+
     // ปุ่มลบอุปกรณ์ (เฉพาะสิทธิ์ Admin เท่านั้น)
     const deleteBtnHtml = (currentUserRole === 'admin')
       ? `<button onclick="adminDeleteAsset('${a.assetId}')"
@@ -1905,8 +2274,9 @@ window.renderAssetListTable = function () {
           <button onclick="showQRModal('${a.assetId}')"
             style="background:#00695c; color:white; border:none; border-radius:6px;
                    padding:4px 10px; font-size:0.78rem; cursor:pointer; white-space:nowrap;">
-            🖨️ ดู / พิมพ์
+            ${(currentUserRole === 'guest' || !currentUserRole) ? '🔍 ดู QR' : '🖨️ ดู / พิมพ์'}
           </button>
+          ${editBtnHtml}
           ${repairBtnHtml}
           ${deleteBtnHtml}
         </div>
@@ -2085,6 +2455,163 @@ window.submitAssetRepaired = async function () {
 };
 
 // ==========================================
+// แก้ไขข้อมูลอุปกรณ์ (Edit Asset)
+// ==========================================
+window.openEditAssetModal = function (assetId) {
+  const asset = assetsList.find(a => a.assetId?.toLowerCase() === assetId?.toLowerCase());
+  if (!asset) {
+    alert("ไม่พบข้อมูลอุปกรณ์");
+    return;
+  }
+
+  const modal = document.getElementById('edit-asset-modal');
+  const origIdInput = document.getElementById('edit-asset-orig-id');
+  const idInput = document.getElementById('edit-asset-id');
+  const typeSelect = document.getElementById('edit-asset-type');
+  const statusSelect = document.getElementById('edit-asset-status');
+  const bldgSelect = document.getElementById('edit-asset-building');
+  const floorInput = document.getElementById('edit-asset-floor');
+  const locInput = document.getElementById('edit-asset-location');
+
+  if (origIdInput) origIdInput.value = asset.assetId;
+  if (idInput) idInput.value = asset.assetId;
+  if (typeSelect) typeSelect.value = asset.type || 'ถังดับเพลิงสีแดง';
+  if (statusSelect) statusSelect.value = asset.status || 'READY';
+  if (bldgSelect) {
+    if (asset.buildingId && bldgSelect.querySelector(`option[value="${asset.buildingId}"]`)) {
+      bldgSelect.value = asset.buildingId;
+    } else {
+      // ค้นหาจากชื่ออาคาร
+      const opt = Array.from(bldgSelect.options).find(o => o.text.includes(asset.building || '') || (asset.building || '').includes(o.text));
+      if (opt) bldgSelect.value = opt.value;
+    }
+  }
+  if (floorInput) floorInput.value = asset.floor || 1;
+  if (locInput) locInput.value = asset.location || '';
+
+  const modalTitle = document.getElementById('edit-asset-modal-title');
+  if (modalTitle) modalTitle.innerText = `✏️ แก้ไขข้อมูล: ${asset.assetId}`;
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeEditAssetModal = function () {
+  const modal = document.getElementById('edit-asset-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitEditAsset = async function () {
+  const origAssetId = document.getElementById('edit-asset-orig-id')?.value;
+  const newAssetId = document.getElementById('edit-asset-id')?.value.trim();
+  const type = document.getElementById('edit-asset-type')?.value;
+  const status = document.getElementById('edit-asset-status')?.value;
+  const bldgSelect = document.getElementById('edit-asset-building');
+  const buildingId = bldgSelect?.value;
+  const buildingName = bldgSelect?.options[bldgSelect.selectedIndex]?.text || '';
+  const floor = parseInt(document.getElementById('edit-asset-floor')?.value) || 1;
+  const location = document.getElementById('edit-asset-location')?.value.trim();
+  const submitBtn = document.getElementById('edit-asset-submit-btn');
+
+  if (!newAssetId || !location) {
+    alert("กรุณากรอกรหัสอุปกรณ์และตำแหน่งติดตั้งให้ครบถ้วน");
+    return;
+  }
+
+  // หากเปลี่ยนรหัส ตรวจสอบว่าไม่ไปซ้ำกับตัวอื่น
+  if (newAssetId.toUpperCase() !== origAssetId.toUpperCase()) {
+    const isDuplicate = assetsList.some(a =>
+      a.assetId?.toUpperCase() === newAssetId.toUpperCase() &&
+      a.assetId?.toUpperCase() !== origAssetId.toUpperCase()
+    );
+    if (isDuplicate) {
+      alert(`⚠️ รหัสอุปกรณ์ "${newAssetId}" มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น`);
+      return;
+    }
+  }
+
+  const assetIndex = assetsList.findIndex(a => a.assetId?.toLowerCase() === origAssetId?.toLowerCase());
+  if (assetIndex === -1) {
+    alert("ไม่พบข้อมูลอุปกรณ์เดิมในระบบ");
+    return;
+  }
+
+  const asset = assetsList[assetIndex];
+
+  try {
+    if (submitBtn) {
+      submitBtn.innerText = "⏳ กำลังบันทึก...";
+      submitBtn.disabled = true;
+    }
+
+    const oldAssetId = asset.assetId;
+    const oldBuildingId = asset.buildingId;
+
+    // อัปเดตข้อมูลใน object
+    asset.assetId = newAssetId;
+    asset.type = type;
+    asset.status = status;
+    asset.building = buildingName;
+    asset.buildingId = buildingId;
+    asset.floor = floor;
+    asset.location = location;
+    asset.updatedAt = new Date().toISOString();
+
+    // บันทึกลง LocalStorage
+    localStorage.setItem('pyh_assets_data', JSON.stringify(assetsList));
+
+    // หากมีการเปลี่ยนรหัสอุปกรณ์ ให้อัปเดตรหัสในประวัติการตรวจ (inspectionLogs) ด้วย เพื่อไม่ให้ประวัติหลุด
+    if (oldAssetId.toUpperCase() !== newAssetId.toUpperCase()) {
+      inspectionLogs.forEach(l => {
+        if (l.assetId?.toLowerCase() === oldAssetId.toLowerCase()) {
+          l.assetId = newAssetId;
+        }
+      });
+      localStorage.setItem('pyh_inspection_logs', JSON.stringify(inspectionLogs));
+    }
+
+    // ซิงค์ Cloud Database (Firestore) หากเปิดใช้งานอยู่
+    if (isFirebaseReady() && db) {
+      try {
+        if (asset.firestoreId) {
+          await updateDoc(doc(db, "assets", asset.firestoreId), {
+            assetId: newAssetId,
+            type,
+            status,
+            building: buildingName,
+            buildingId,
+            floor,
+            location,
+            updatedAt: serverTimestamp()
+          });
+        }
+      } catch (cloudErr) {
+        console.warn("Firestore update error in submitEditAsset:", cloudErr);
+      }
+    }
+
+    alert(`💾 แก้ไขข้อมูลอุปกรณ์ [${newAssetId}] เรียบร้อยแล้ว`);
+    closeEditAssetModal();
+
+    // อัปเดต UI ทั่วทั้งระบบ
+    renderAssetListTable();
+    updateDashboardUI();
+    renderMapPins();
+    if (typeof window.renderRegisterExistingMarkers === 'function') {
+      window.renderRegisterExistingMarkers();
+    }
+    renderHistoryTable();
+
+  } catch (err) {
+    alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+  } finally {
+    if (submitBtn) {
+      submitBtn.innerText = "💾 บันทึกการแก้ไข";
+      submitBtn.disabled = false;
+    }
+  }
+};
+
+// ==========================================
 // สิทธิ์ Admin: ลบอุปกรณ์ (Admin Delete Asset)
 // ==========================================
 window.adminDeleteAsset = async function (assetId) {
@@ -2251,6 +2778,13 @@ window.showQRModal = function (assetId) {
     colorLight: '#ffffff'
   });
 
+  // ซ่อนปุ่มพิมพ์และบันทึกภาพสำหรับ Guest
+  const isGuest = (!currentUserRole || currentUserRole === 'guest');
+  const printBtn = document.getElementById('qr-modal-print-btn');
+  const downloadBtn = document.getElementById('qr-modal-download-btn');
+  if (printBtn) printBtn.style.display = isGuest ? 'none' : 'inline-block';
+  if (downloadBtn) downloadBtn.style.display = isGuest ? 'none' : 'inline-block';
+
   modal.style.display = 'flex';
 };
 
@@ -2269,6 +2803,7 @@ window.downloadQR = function () {
 };
 
 window.printQRModal = function () {
+  if (!requireLogin('สั่งพิมพ์ QR Code')) return;
   const canvas = document.querySelector('#qr-modal-canvas canvas');
   if (!canvas || !_qrModalAsset) return;
   const a = _qrModalAsset;
@@ -2291,6 +2826,7 @@ window.printQRModal = function () {
 };
 
 window.printAllQR = function () {
+  if (!requireLogin('สั่งพิมพ์ QR Code')) return;
   const keyword = (document.getElementById('asset-search')?.value || '').toLowerCase();
   const filtered = assetsList.filter(a =>
     !keyword ||
@@ -2923,8 +3459,7 @@ window.renderAdminUserList = function () {
 };
 
 function saveUserSession(name, role) {
-  localStorage.setItem('pyh_officer', name);
-  localStorage.setItem('pyh_role', role);
+  setSession(name, role);
   applyUserSession(name, role);
 }
 
@@ -2938,22 +3473,29 @@ function applyUserSession(name, role) {
 
   if (nameEl) nameEl.innerText = name;
   if (roleEl) {
-    if (role === 'admin') roleEl.innerText = 'ผู้ดูแลระบบ (Admin)';
+    if (role === 'guest' || !role) roleEl.innerText = 'ดูข้อมูลเท่านั้น';
+    else if (role === 'admin') roleEl.innerText = 'ผู้ดูแลระบบ (Admin)';
     else if (role === 'executive') roleEl.innerText = 'ผู้อำนวยการ / ผู้บริหาร รพ.';
     else if (role === 'chef_inspector' || role === 'chef inspector') roleEl.innerText = 'หัวหน้าผู้ตรวจสอบ (Chef Inspector)';
-    else roleEl.innerText = 'เจ้าหน้าที่ผู้ตรวจเช็ก (Inspector)';
+    else if (role === 'inspector') roleEl.innerText = 'เจ้าหน้าที่ผู้ตรวจเช็ก (Inspector)';
+    else roleEl.innerText = role;
   }
-  if (badgeOfficer) badgeOfficer.innerText = name;
+  if (badgeOfficer) {
+    badgeOfficer.innerText = (role === 'guest' || !role) ? 'โหมดดูข้อมูล (ยังไม่ได้เข้าสู่ระบบ)' : name;
+  }
 
   // ควบคุมแท็บเมนูตามสิทธิ์การใช้งาน (RBAC)
   const navDashboard = document.getElementById('tab-nav-dashboard');
   const navScanner = document.getElementById('tab-nav-scanner');
   const navRegister = document.getElementById('tab-nav-register');
+  const navAssets = document.getElementById('tab-nav-assets');
   const navHistory = document.getElementById('tab-nav-history');
   const navReport = document.getElementById('tab-nav-report');
   const navBackup = document.getElementById('tab-nav-backup');
   const navAdmin = document.getElementById('tab-nav-admin');
 
+  const btnChangeOfficer = document.getElementById('btn-change-officer');
+  const btnSimulateFull = document.getElementById('btn-simulate-full');
   const reportControlsCard = document.getElementById('report-controls-card');
   const execToolbar = document.getElementById('executive-report-toolbar');
   const adminNotice = document.getElementById('admin-map-drag-notice');
@@ -3039,11 +3581,31 @@ function applyUserSession(name, role) {
       window.switchTab('dashboard');
     }
 
+  } else if (role === 'guest' || !role) {
+    // 0. Guest Mode: ดูแดชบอร์ด, ทะเบียนอุปกรณ์, ประวัติ และรายงานได้ แต่ซ่อนปุ่มและการกระทำแอดมิน/ช่าง
+    if (navDashboard) navDashboard.style.display = 'inline-block';
+    if (navAssets) navAssets.style.display = 'inline-block';
+    if (navHistory) navHistory.style.display = 'inline-block';
+    if (navReport) navReport.style.display = 'inline-block';
+
+    if (navScanner) navScanner.style.display = 'none';
+    if (navRegister) navRegister.style.display = 'none';
+    if (navBackup) navBackup.style.display = 'none';
+    if (navAdmin) navAdmin.style.display = 'none';
+
+    if (adminNotice) adminNotice.classList.add('hidden');
+    if (adminAddAssetBtn) adminAddAssetBtn.style.display = 'none';
+
+    const currentActiveTab = document.querySelector('.tab-content.active');
+    if (currentActiveTab && ['tab-scanner', 'tab-register', 'tab-backup', 'tab-admin'].includes(currentActiveTab.id)) {
+      window.switchTab('dashboard');
+    }
   } else {
-    // 3. แอดมิน: แสดงครบทุกแท็บ และเปิดโหมดขยับจุดติดตั้ง + ปุ่มเพิ่มจุดติดตั้งบนผัง
+    // 3. แอดมิน (admin): แสดงครบทุกแท็บ และเปิดโหมดขยับจุดติดตั้ง + ปุ่มเพิ่มจุดติดตั้งบนผัง
     if (navDashboard) navDashboard.style.display = 'inline-block';
     if (navScanner) navScanner.style.display = 'inline-block';
     if (navRegister) navRegister.style.display = 'inline-block';
+    if (navAssets) navAssets.style.display = 'inline-block';
     if (navHistory) navHistory.style.display = 'inline-block';
     if (navReport) navReport.style.display = 'inline-block';
     if (navBackup) navBackup.style.display = 'inline-block';
@@ -3059,25 +3621,38 @@ function applyUserSession(name, role) {
     adminDeleteAllBtn.style.display = (role === 'admin') ? 'inline-block' : 'none';
   }
 
+  // ควบคุมการแสดงปุ่มพิมพ์รายงาน, จำลองผลตรวจ, พิมพ์ QR, เปลี่ยนชื่อผู้ตรวจ สำหรับเจ้าหน้าที่ที่ล็อกอินแล้วเท่านั้น (Guest ดูได้อย่างเดียว)
+  const isGuest = (!role || role === 'guest');
+  if (btnChangeOfficer) {
+    btnChangeOfficer.style.display = isGuest ? 'none' : 'inline-block';
+  }
+  if (btnSimulateFull) {
+    btnSimulateFull.style.display = isGuest ? 'none' : 'inline-block';
+  }
+  const btnPrintReport = document.getElementById('btn-print-executive-report');
+  if (btnPrintReport) {
+    btnPrintReport.style.display = isGuest ? 'none' : 'inline-block';
+  }
+  const btnPrintAllQR = document.getElementById('btn-print-all-qr');
+  if (btnPrintAllQR) {
+    btnPrintAllQR.style.display = isGuest ? 'none' : 'inline-block';
+  }
+  const btnEditGuide = document.getElementById('btn-edit-guide');
+  if (btnEditGuide) {
+    btnEditGuide.style.display = isGuest ? 'none' : 'inline-flex';
+  }
+
   // อัปเดตหมุดบนแผนที่ตามสิทธิ์ (Admin สามารถลากได้)
   if (typeof renderMapPins === 'function') {
     renderMapPins();
   }
 }
 
-window.logoutUser = function () {
-  if (isFirebaseReady() && auth) {
-    signOut(auth);
-  }
-  localStorage.removeItem('pyh_officer');
-  localStorage.removeItem('pyh_role');
-  currentOfficer = "นายสุวิทย์ พวงสมบัติ";
-  currentUserRole = "inspector";
-  applyUserSession(currentOfficer, currentUserRole);
-  document.getElementById('auth-modal').classList.remove('hidden');
-};
-
 window.setOfficerProfile = function () {
+  if (currentUserRole === 'guest' || !currentUserRole) {
+    alert("🔒 โหมดผู้เยี่ยมชม (Guest) ดูข้อมูลได้อย่างเดียวเท่านั้น\nกรุณาเข้าสู่ระบบเพื่อเปลี่ยนชื่อผู้ตรวจ");
+    return;
+  }
   const newName = prompt("กรุณาระบุชื่อและนามสกุลผู้ตรวจเช็ก:", getCleanName(currentOfficer));
   if (newName && newName.trim()) {
     currentOfficer = getCleanName(newName.trim());
@@ -3593,6 +4168,10 @@ window.generateExecutiveReport = function () {
 };
 
 window.simulateFullInspection = function () {
+  if (currentUserRole === 'guest' || !currentUserRole) {
+    alert("🔒 โหมดผู้เยี่ยมชม (Guest) ดูข้อมูลได้อย่างเดียวเท่านั้น\nกรุณาเข้าสู่ระบบด้วยบัญชีเจ้าหน้าที่เพื่อดำเนินการนี้");
+    return;
+  }
   if (!assetsList || assetsList.length === 0) {
     alert("ไม่พบข้อมูลอุปกรณ์ในระบบ กำลังโหลดข้อมูลเริ่มต้น...");
     initAssets();
@@ -3665,6 +4244,7 @@ window.simulateFullInspection = function () {
 };
 
 window.printExecutiveReport = function () {
+  if (!requireLogin('สั่งพิมพ์รายงานสรุปผล')) return;
   const reportContainer = document.getElementById('report-content-body');
   if (!reportContainer || !reportContainer.innerHTML.trim()) {
     window.generateExecutiveReport();

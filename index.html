@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.3">
+  <link rel="stylesheet" href="style.css?v=2.4">
 
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -96,7 +96,7 @@
 
     <div class="officer-badge">
       <span>ผู้ตรวจประจำเวร: <b id="current-officer-name">-</b></span>
-      <button onclick="setOfficerProfile()" class="btn-sm">เปลี่ยนชื่อผู้ตรวจ</button>
+      <button id="btn-change-officer" onclick="setOfficerProfile()" class="btn-sm">เปลี่ยนชื่อผู้ตรวจ</button>
     </div>
 
     <div class="nav-tabs">
@@ -171,21 +171,42 @@
         </div>
 
         <!-- แถบปุ่มลัดสลับไปยังผังอาคารต่าง ๆ ทันที (Quick Building Switcher) -->
-        <div id="building-quick-switcher" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; padding:10px 14px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border:1px solid #e2e8f0; border-radius:10px;">
+        <div id="building-quick-switcher"
+          style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; padding:10px 14px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border:1px solid #e2e8f0; border-radius:10px;">
           <span style="font-size:0.84rem; font-weight:700; color:#334155; display:flex; align-items:center; gap:5px;">
             🏢 <span>คลิกเปิดผังอาคาร:</span>
           </span>
           <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('campus')" style="background:#0284c7; color:white; border-radius:20px; padding:5px 12px; font-size:0.8rem; border:none; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">🌐 ภาพรวมโรงพยาบาล</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_lower')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢 อุบัติเหตุ (ชั้นล่าง)</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_upper')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢 อุบัติเหตุ (ชั้นบน)</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_hpc')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥 ส่งเสริมสุขภาพ (HPC)</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_ipd')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🛏️ ผู้ป่วยใน (IPD)</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_nisit')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🩺 นิสิตคุณากร</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_opd_dm')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥 ตึกแก้วกัลยา</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_pharma_rehab')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">💊 เวชศาสตร์ฯ-คลังยา</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_thai_med')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🌿 แพทย์แผนไทย</button>
-            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_canteen')" style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🍲 โรงอาหาร</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('campus')"
+              style="background:#0284c7; color:white; border-radius:20px; padding:5px 12px; font-size:0.8rem; border:none; cursor:pointer; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.1);">🌐
+              ภาพรวมโรงพยาบาล</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_lower')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢
+              อุบัติเหตุ (ชั้นล่าง)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_er_upper')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏢
+              อุบัติเหตุ (ชั้นบน)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_hpc')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥
+              ส่งเสริมสุขภาพ (HPC)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_ipd')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🛏️
+              ผู้ป่วยใน (IPD)</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_nisit')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🩺
+              นิสิตคุณากร</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_opd_dm')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🏥
+              ตึกแก้วกัลยา</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_pharma_rehab')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">💊
+              เวชศาสตร์ฯ-คลังยา</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_thai_med')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🌿
+              แพทย์แผนไทย</button>
+            <button type="button" class="btn-sm bldg-nav-btn" onclick="selectBuildingFloor('building_canteen')"
+              style="background:#ffffff; color:#0f766e; border:1px solid #cbd5e1; border-radius:20px; padding:5px 12px; font-size:0.8rem; cursor:pointer; font-weight:600;">🍲
+              โรงอาหาร</button>
           </div>
         </div>
 
@@ -259,6 +280,37 @@
             สามารถพิมพ์รหัสอุปกรณ์เพื่อเปิดแบบฟอร์มตรวจเช็กได้ทันที
           </p>
         </div>
+
+        <!-- คำแนะนำและขั้นตอนวิธีการตรวจเช็กมาตรฐาน (Standard Inspection Guide) -->
+        <div
+          style="margin-top:20px; border:1px solid #bbf7d0; background:linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-radius:14px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="toggleInspectionGuide()">
+              <span style="font-size:1.25rem;">📖</span>
+              <div>
+                <h4 style="margin:0; font-size:0.98rem; color:#166534; font-weight:700;">
+                  คู่มือขั้นตอนและวิธีการตรวจเช็กตามมาตรฐาน (SOP / HA Part II)</h4>
+                <p style="margin:2px 0 0; font-size:0.8rem; color:#15803d;">
+                  เกณฑ์มาตรฐานการตรวจเช็กถังดับเพลิงและไฟฉุกเฉินประจำงวด</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button type="button" id="btn-edit-guide" onclick="openEditGuideModal()"
+                style="background:#ffffff; color:#166534; border:1px solid #86efac; border-radius:20px; padding:4px 12px; font-size:0.8rem; font-weight:600; cursor:pointer; display:none; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                ✏️ แก้ไขคู่มือ
+              </button>
+              <button type="button" id="btn-toggle-guide" onclick="toggleInspectionGuide()"
+                style="background:#dcfce7; color:#166534; border:1px solid #86efac; border-radius:20px; padding:4px 12px; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <span id="guide-toggle-text">ซ่อนคู่มือ</span> <span id="guide-toggle-icon">▲</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="inspection-guide-content"
+            style="margin-top:14px; border-top:1px dashed #bbf7d0; padding-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+            <!-- เนื้อหาขั้นตอนวิธีตรวจจะถูกเรนเดอร์แบบไดนามิกโดย renderInspectionGuideUI() -->
+          </div>
+        </div>
       </div>
 
       <!-- กล่องแบบฟอร์มตรวจสอบ (แสดงเมื่อสแกนเจอหรือคลิกจากแผนที่) -->
@@ -286,44 +338,91 @@
 
           <!-- 1. รายการตรวจเช็กสำหรับถังดับเพลิง (Fire Extinguisher) -->
           <div id="fe-checklist-fields">
-            <label>1. สภาพภายนอก, คันบีบ, สายฉีด, ซีลและสลักล็อก:</label>
-            <select id="fe-body" required>
-              <option value="PASS">✅ ปกติ (สมบูรณ์ สลักล็อกแน่นหนา ไม่แตกหัก)</option>
-              <option value="FAIL">❌ ชำรุด (สลักหลุด / สายแตก / ตัวถังบุบสนิม)</option>
-            </select>
+            <div
+              style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:0.82rem; color:#991b1b; display:flex; align-items:center; gap:6px;">
+              <span>🧯 <b>คำแนะนำตรวจถังดับเพลิง:</b> ตรวจสอบสภาพรอบตัวถัง เช็กระดับแรงดัน
+                และแน่ใจว่าเข้าถึงได้สะดวก</span>
+            </div>
 
-            <label>2. เกจวัดแรงดัน (Pressure Gauge):</label>
-            <select id="fe-pressure" required>
-              <option value="PASS">✅ ปกติ (เข็มชี้อยู่ในแถบสีเขียว)</option>
-              <option value="FAIL">❌ ผิดปกติ (เข็มตกแถบแดง / แรงดันต่ำหรือสูงเกิน)</option>
-            </select>
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>1. สภาพภายนอก, คันบีบ, สายฉีด, ซีลและสลักล็อก:</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: ดูรอยบุบ/สนิม,
+                  ดึงสลักต้องแน่น, สายยางไม่อุดตัน</span>
+              </label>
+              <select id="fe-body" required>
+                <option value="PASS">✅ ปกติ (สมบูรณ์ สลักล็อกแน่นหนา ไม่แตกหัก)</option>
+                <option value="FAIL">❌ ชำรุด (สลักหลุด / สายแตก / ตัวถังบุบสนิม)</option>
+              </select>
+            </div>
 
-            <label>3. สภาพแวดล้อมและทางเข้าถึง:</label>
-            <select id="fe-access" required>
-              <option value="PASS">✅ ปกติ (ไม่มีสิ่งของวางกีดขวาง หยิบใช้งานได้ทันที)</option>
-              <option value="FAIL">❌ มีสิ่งของวางบดบังหรือขวางทางเข้าถึง</option>
-            </select>
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>2. เกจวัดแรงดัน (Pressure Gauge):</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: สังเกตหน้าปัด
+                  เข็มต้องชี้แถบสีเขียวตรงกลาง</span>
+              </label>
+              <select id="fe-pressure" required>
+                <option value="PASS">✅ ปกติ (เข็มชี้อยู่ในแถบสีเขียว)</option>
+                <option value="FAIL">❌ ผิดปกติ (เข็มตกแถบแดง / แรงดันต่ำหรือสูงเกิน)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>3. สภาพแวดล้อมและทางเข้าถึง:</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: รัศมี 1 เมตรไม่มีสิ่งของบัง
+                  ป้ายตำแหน่งชัดเจน</span>
+              </label>
+              <select id="fe-access" required>
+                <option value="PASS">✅ ปกติ (ไม่มีสิ่งของวางกีดขวาง หยิบใช้งานได้ทันที)</option>
+                <option value="FAIL">❌ มีสิ่งของวางบดบังหรือขวางทางเข้าถึง</option>
+              </select>
+            </div>
           </div>
 
           <!-- 2. รายการตรวจเช็กสำหรับไฟฉุกเฉิน (Emergency Light) -->
           <div id="em-checklist-fields" class="hidden">
-            <label>1. สภาพภายนอกและปลั๊กไฟ:</label>
-            <select id="em-plug" required>
-              <option value="PASS">✅ ปกติ (ตัวเครื่องและปลั๊กไฟแน่นหนา ไม่ชำรุด)</option>
-              <option value="FAIL">❌ ชำรุด (ปลั๊กหลวม / สายไฟชำรุด / โคมแตก)</option>
-            </select>
+            <div
+              style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:0.82rem; color:#0369a1; display:flex; align-items:center; gap:6px;">
+              <span>💡 <b>คำแนะนำตรวจไฟฉุกเฉิน:</b> ตรวจไฟสถานะ AC และกดปุ่ม TEST จำลองไฟดับเพื่อทดสอบแบตเตอรี่</span>
+            </div>
 
-            <label>2. ไฟแสดงสถานะไฟเข้า (AC Indicator):</label>
-            <select id="em-light" required>
-              <option value="PASS">✅ ปกติ (ไฟ LED แสดงสถานะไฟเข้าติดสว่าง)</option>
-              <option value="FAIL">❌ ผิดปกติ (ไฟ AC ไม่ติด / ไฟไม่เข้า)</option>
-            </select>
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>1. สภาพภายนอกและปลั๊กไฟ:</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: ตรวจตัวถัง เสียบปลั๊กแน่น
+                  สายไฟไม่ขาด</span>
+              </label>
+              <select id="em-plug" required>
+                <option value="PASS">✅ ปกติ (ตัวเครื่องและปลั๊กไฟแน่นหนา ไม่ชำรุด)</option>
+                <option value="FAIL">❌ ชำรุด (ปลั๊กหลวม / สายไฟชำรุด / โคมแตก)</option>
+              </select>
+            </div>
 
-            <label>3. การทดสอบปุ่ม Test (แบตเตอรี่สำรอง):</label>
-            <select id="em-test" required>
-              <option value="PASS">✅ ปกติ (กดปุ่ม Test แล้วหลอดไฟสว่างทั้ง 2 ดวง)</option>
-              <option value="FAIL">❌ ผิดปกติ (ไฟไม่ติด หรือติดเพียงดวงเดียว / แบตเตอรี่เสื่อม)</option>
-            </select>
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>2. ไฟแสดงสถานะไฟเข้า (AC Indicator):</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: สังเกตไฟ LED
+                  หน้าเครื่องต้องติดสว่าง</span>
+              </label>
+              <select id="em-light" required>
+                <option value="PASS">✅ ปกติ (ไฟ LED แสดงสถานะไฟเข้าติดสว่าง)</option>
+                <option value="FAIL">❌ ผิดปกติ (ไฟ AC ไม่ติด / ไฟไม่เข้า)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>3. การทดสอบปุ่ม Test (แบตเตอรี่สำรอง):</span>
+                <span style="font-size:0.75rem; color:#0284c7; font-weight:600;">วิธีตรวจ: กดปุ่ม Test ค้าง 5 วินาที
+                  หลอดต้องสว่างทั้งคู่</span>
+              </label>
+              <select id="em-test" required>
+                <option value="PASS">✅ ปกติ (กดปุ่ม Test แล้วหลอดไฟสว่างทั้ง 2 ดวง)</option>
+                <option value="FAIL">❌ ผิดปกติ (ไฟไม่ติด หรือติดเพียงดวงเดียว / แบตเตอรี่เสื่อม)</option>
+              </select>
+            </div>
           </div>
 
           <!-- ภาพถ่ายหลักฐาน -->
@@ -397,16 +496,38 @@
               style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
               <label style="margin:0; font-weight:700; color:#00695c;">📍 กำหนดตำแหน่งจุดติดตั้งบนผังอาคาร
                 (คลิกหรือลากหมุดเพื่อระบุตำแหน่ง):</label>
-              <span id="reg-coord-badge" class="badge" style="background:#e0f2fe; color:#0369a1;">พิกัดผัง: Y: 280, X:
-                500</span>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <span id="reg-existing-count-badge" class="badge"
+                  style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1;">📦 มีอุปกรณ์เดิมในอาคารนี้ 0
+                  จุด</span>
+                <span id="reg-coord-badge" class="badge" style="background:#e0f2fe; color:#0369a1;">พิกัดผัง: Y: 280, X:
+                  500</span>
+              </div>
             </div>
             <input type="hidden" id="reg-coord-y" value="280">
             <input type="hidden" id="reg-coord-x" value="500">
             <div id="register-map"
               style="height:260px; border-radius:6px; border:1px solid #cbd5e1; background:#f1f5f9;"></div>
-            <p style="font-size:0.8rem; color:#64748b; margin:6px 0 0 0;">
-              * คลิกบนผังอาคาร หรือลากหมุดเพื่อระบุจุดติดตั้งจริงของอุปกรณ์นี้
-            </p>
+
+            <!-- คำอธิบายสัญลักษณ์หมุด (Map Legend) -->
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:0.8rem; color:#475569;">
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span style="display:inline-flex; align-items:center; gap:4px;">
+                  <span
+                    style="display:inline-block; width:12px; height:12px; background:#0284c7; border-radius:50%; border:2px solid #fff; box-shadow:0 0 4px rgba(0,0,0,0.3);"></span>
+                  <b>★ หมุดสีฟ้า:</b> จุดอุปกรณ์ใหม่ที่จะลงทะเบียน (คลิกลากได้)
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:4px;">
+                  <span
+                    style="display:inline-block; width:10px; height:10px; background:#16a34a; border-radius:50%; border:1.5px solid #fff; box-shadow:0 0 3px rgba(0,0,0,0.3);"></span>
+                  <span
+                    style="display:inline-block; width:10px; height:10px; background:#dc2626; border-radius:50%; border:1.5px solid #fff; box-shadow:0 0 3px rgba(0,0,0,0.3); margin-left:-2px;"></span>
+                  <b>หมุดเดิม:</b> อุปกรณ์ที่มีอยู่แล้ว (คลิกดูรหัส/ตำแหน่งได้)
+                </span>
+              </div>
+              <span style="color:#64748b;">* คลิกบนผังอาคาร หรือลากหมุดสีฟ้าเพื่อระบุตำแหน่งใหม่</span>
+            </div>
           </div>
 
           <button type="submit" class="btn-primary" style="margin-top:16px;">
@@ -447,7 +568,7 @@
             <input id="asset-search" type="text" placeholder="🔍 ค้นหารหัส / จุดติดตั้ง..."
               oninput="renderAssetListTable()"
               style="padding:7px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; min-width:180px;">
-            <button onclick="printAllQR()"
+            <button id="btn-print-all-qr" onclick="printAllQR()"
               style="background:#0284c7; color:white; border:none; border-radius:8px; padding:7px 14px; font-size:0.85rem; cursor:pointer;">
               🖨️ พิมพ์ QR ทั้งหมด
             </button>
@@ -562,6 +683,159 @@
       </div>
     </div>
 
+    <!-- Modal แก้ไขข้อมูลอุปกรณ์ (Edit Asset Modal) -->
+    <div id="edit-asset-modal" onclick="if(event.target===this) closeEditAssetModal()"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8600; align-items:center; justify-content:center; padding:16px;">
+      <div
+        style="background:white; border-radius:16px; width:100%; max-width:540px; box-shadow:0 25px 60px rgba(0,0,0,0.4); overflow:hidden; max-height:90vh; display:flex; flex-direction:column;">
+        <div
+          style="padding:16px 20px; background:linear-gradient(135deg, #0284c7, #0369a1); color:white; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 id="edit-asset-modal-title" style="margin:0; font-size:1.15rem; color:white;">✏️ แก้ไขข้อมูลอุปกรณ์</h3>
+            <p style="margin:2px 0 0; font-size:0.8rem; opacity:0.9;">ปรับปรุงข้อมูลรายละเอียด หรือแก้ไขข้อผิดพลาด</p>
+          </div>
+          <button onclick="closeEditAssetModal()"
+            style="background:none; border:none; color:white; font-size:1.4rem; cursor:pointer; line-height:1;">✕</button>
+        </div>
+        <form id="edit-asset-form" onsubmit="event.preventDefault(); submitEditAsset();"
+          style="padding:20px; overflow-y:auto; flex:1;">
+          <input type="hidden" id="edit-asset-orig-id" value="">
+
+          <div style="margin-bottom:12px;">
+            <label
+              style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">รหัสอุปกรณ์
+              (Asset ID):</label>
+            <input type="text" id="edit-asset-id" required
+              style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+            <p style="font-size:0.75rem; color:#64748b; margin:4px 0 0 0;">* หากเปลี่ยนรหัส
+              ข้อมูลประวัติการตรวจเดิมจะถูกเชื่อมต่อตามรหัสใหม่อัตโนมัติ</p>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label
+                style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">ประเภทอุปกรณ์:</label>
+              <select id="edit-asset-type" required
+                style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; background:white; box-sizing:border-box;">
+                <option value="ถังดับเพลิงสีแดง">ถังดับเพลิงสีแดง</option>
+                <option value="ถังดับเพลิงสีเขียว">ถังดับเพลิงสีเขียว</option>
+                <option value="ไฟฉุกเฉิน">ไฟฉุกเฉิน</option>
+              </select>
+            </div>
+            <div>
+              <label
+                style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">สถานะอุปกรณ์:</label>
+              <select id="edit-asset-status" required
+                style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; background:white; box-sizing:border-box;">
+                <option value="READY">✅ พร้อมใช้งาน</option>
+                <option value="REPAIRING">🛠️ อยู่ระหว่างส่งซ่อม</option>
+                <option value="ISSUE">⚠️ ชำรุด/แจ้งซ่อม</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">อาคาร
+                / ตึก:</label>
+              <select id="edit-asset-building" required
+                style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; background:white; box-sizing:border-box;">
+                <option value="building_er_lower">อาคารอุบัติเหตุ (ชั้นล่าง)</option>
+                <option value="building_er_upper">อาคารอุบัติเหตุ (ชั้นบน)</option>
+                <option value="building_hpc">อาคารส่งเสริมสุขภาพ</option>
+                <option value="building_ipd">อาคารผู้ป่วยใน (IPD)</option>
+                <option value="building_nisit">อาคารนิสิตคุณากร (Covid 19)</option>
+                <option value="building_opd_dm">ตึกแก้วกัลยา (ผู้ป่วยนอก OPD)</option>
+                <option value="building_pharma_rehab">อาคารเวชศาสตร์ฟื้นฟู-โภชนาการ-คลังยา-จ่ายกลาง</option>
+                <option value="building_thai_med">อาคารแพทย์แผนไทย</option>
+                <option value="building_canteen">อาคารโรงอาหาร</option>
+              </select>
+            </div>
+            <div>
+              <label
+                style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">ชั้นที่ติดตั้ง:</label>
+              <input type="number" id="edit-asset-floor" value="1" min="1" max="5" required
+                style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-weight:600; font-size:0.88rem; color:#1e293b; display:block; margin-bottom:4px;">ตำแหน่ง
+              / จุดติดตั้งระบุชัดเจน:</label>
+            <input type="text" id="edit-asset-location" required placeholder="เช่น หน้าห้องเอกซเรย์, โถงทางเดินกลาง"
+              style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+          </div>
+
+          <div
+            style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid #f1f5f9; padding-top:14px;">
+            <button type="button" onclick="closeEditAssetModal()" class="btn-secondary"
+              style="padding:9px 16px; border-radius:8px; margin:0;">ยกเลิก</button>
+            <button type="submit" id="edit-asset-submit-btn"
+              style="background:#0284c7; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600; cursor:pointer; margin:0;">
+              💾 บันทึกการแก้ไข
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal แก้ไขคู่มือขั้นตอนวิธีการตรวจ (Edit Inspection Guide Modal) -->
+    <div id="edit-guide-modal" onclick="if(event.target===this) closeEditGuideModal()"
+      style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8600; align-items:center; justify-content:center; padding:16px;">
+      <div
+        style="background:white; border-radius:16px; width:100%; max-width:680px; box-shadow:0 25px 60px rgba(0,0,0,0.4); overflow:hidden; max-height:90vh; display:flex; flex-direction:column;">
+        <div
+          style="padding:16px 20px; background:linear-gradient(135deg, #00695c, #004d40); color:white; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="margin:0; font-size:1.15rem; color:white;">✏️ แก้ไขคู่มือขั้นตอนวิธีการตรวจเช็ก (SOP Guide)</h3>
+            <p style="margin:2px 0 0; font-size:0.8rem; opacity:0.9;">
+              ปรับปรุงหัวข้อและข้อปฏิบัติให้สอดคล้องกับมาตรฐานล่าสุดของโรงพยาบาล</p>
+          </div>
+          <button type="button" onclick="closeEditGuideModal()"
+            style="background:none; border:none; color:white; font-size:1.4rem; cursor:pointer; line-height:1;">✕</button>
+        </div>
+        <form id="edit-guide-form" onsubmit="event.preventDefault(); submitEditGuide();"
+          style="padding:20px; overflow-y:auto; flex:1;">
+
+          <div style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.9rem; color:#991b1b; display:block; margin-bottom:6px;">
+              🧯 ขั้นตอนการตรวจถังดับเพลิง (Fire Extinguisher) — แยกข้อละ 1 บรรทัด:
+            </label>
+            <textarea id="edit-guide-fe" rows="6" required placeholder="พิมพ์ขั้นตอนตรวจถังดับเพลิง ทีละบรรทัด..."
+              style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box; line-height:1.6; font-family:'Sarabun', sans-serif;"></textarea>
+            <p style="font-size:0.75rem; color:#64748b; margin:4px 0 0 0;">💡 คำแนะนำ: พิมพ์ 1 บรรทัดต่อ 1 ข้อปฏิบัติ
+              ระบบจะจัดลำดับตัวเลขให้อัตโนมัติ</p>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.9rem; color:#0369a1; display:block; margin-bottom:6px;">
+              💡 ขั้นตอนการตรวจไฟฉุกเฉิน (Emergency Light) — แยกข้อละ 1 บรรทัด:
+            </label>
+            <textarea id="edit-guide-em" rows="6" required placeholder="พิมพ์ขั้นตอนตรวจไฟฉุกเฉิน ทีละบรรทัด..."
+              style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.88rem; box-sizing:border-box; line-height:1.6; font-family:'Sarabun', sans-serif;"></textarea>
+            <p style="font-size:0.75rem; color:#64748b; margin:4px 0 0 0;">💡 คำแนะนำ: พิมพ์ 1 บรรทัดต่อ 1 ข้อปฏิบัติ
+              ระบบจะจัดลำดับตัวเลขให้อัตโนมัติ</p>
+          </div>
+
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; border-top:1px solid #f1f5f9; padding-top:14px;">
+            <button type="button" onclick="resetGuideToDefault()" class="btn-secondary"
+              style="padding:9px 14px; border-radius:8px; margin:0; font-size:0.82rem; color:#b91c1c; border-color:#fecdd3; background:#fff1f2;">
+              🔄 รีเซ็ตเป็นค่าเริ่มต้น
+            </button>
+            <div style="display:flex; gap:10px;">
+              <button type="button" onclick="closeEditGuideModal()" class="btn-secondary"
+                style="padding:9px 16px; border-radius:8px; margin:0;">ยกเลิก</button>
+              <button type="submit" id="edit-guide-submit-btn"
+                style="background:#00695c; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600; cursor:pointer; margin:0;">
+                💾 บันทึกคู่มือ
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- modal แสดง QR ขนาดใหญ่ -->
     <div id="qr-modal"
       style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:8000; align-items:center; justify-content:center;">
@@ -571,10 +845,10 @@
         <div id="qr-modal-canvas" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
         <p id="qr-modal-label" style="font-size:0.85rem; color:#475569; margin:0 0 20px;"></p>
         <div style="display:flex; gap:10px; justify-content:center;">
-          <button onclick="downloadQR()"
+          <button id="qr-modal-download-btn" onclick="downloadQR()"
             style="background:#00695c; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">⬇️
             บันทึกภาพ</button>
-          <button onclick="printQRModal()"
+          <button id="qr-modal-print-btn" onclick="printQRModal()"
             style="background:#0284c7; color:white; border:none; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9rem;">🖨️
             พิมพ์</button>
           <button onclick="closeQRModal()"
@@ -694,7 +968,7 @@
             </p>
           </div>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button onclick="simulateFullInspection()" class="btn-sm"
+            <button id="btn-simulate-full" onclick="simulateFullInspection()" class="btn-sm"
               style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               ⚡ จำลองผลตรวจ 100%
             </button>
@@ -702,7 +976,7 @@
               style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               🔄 รีเฟรชรายงาน
             </button>
-            <button onclick="printExecutiveReport()" class="btn-sm"
+            <button id="btn-print-executive-report" onclick="printExecutiveReport()" class="btn-sm"
               style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
               🖨️ สั่งพิมพ์ / บันทึก PDF (A4)
             </button>
@@ -990,7 +1264,7 @@
   <!-- แจ้งเตือนสถานะการย้ายพิกัดหมุด (Admin Map Toast) -->
   <div id="map-toast-notification" class="map-toast"></div>
 
-  <script type="module" src="app.js?v=5.3"></script>
+  <script type="module" src="app.js?v=6.1"></script>
 </body>
 
 </html>
