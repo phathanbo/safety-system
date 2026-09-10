@@ -718,13 +718,39 @@ window.changeMapLevel = function () {
   currentMapMode = selectedMode;
   updateBuildingButtonStates(selectedMode);
 
-  if (currentTileLayer && map.hasLayer(currentTileLayer)) map.removeLayer(currentTileLayer);
-  if (currentOverlayLayer && map.hasLayer(currentOverlayLayer)) map.removeLayer(currentOverlayLayer);
-  markers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
-  markers = [];
+  const targetCRS = (selectedMode === 'campus') ? L.CRS.EPSG3857 : L.CRS.Simple;
+
+  // Leaflet ไม่รองรับการเปลี่ยน map.options.crs ในอินสแตนซ์เดิมแบบไดนามิก (จะทำให้พิกัดและการแปลง Projection พัง/กลายเป็นสีว่างเปล่า)
+  // หากมีการสลับระหว่าง Campus (พิกัดดาวเทียมจริง EPSG3857) กับ ผังอาคาร (พิกัดพิกเซลราบ Simple) จำเป็นต้อง re-create map instance ใหม่
+  if (map && map.options.crs !== targetCRS) {
+    if (currentTileLayer && map.hasLayer(currentTileLayer)) map.removeLayer(currentTileLayer);
+    if (currentOverlayLayer && map.hasLayer(currentOverlayLayer)) map.removeLayer(currentOverlayLayer);
+    markers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
+    markers = [];
+    map.remove();
+    map = null;
+  }
+
+  if (!map) {
+    const isCampus = (selectedMode === 'campus');
+    map = L.map('floor-map', {
+      crs: targetCRS,
+      minZoom: isCampus ? 16 : -1,
+      maxZoom: isCampus ? 20 : 4,
+      zoomSnap: isCampus ? 1 : 0.25,
+      zoomDelta: isCampus ? 1 : 0.5,
+      wheelPxPerZoomLevel: 120
+    });
+  } else {
+    // ปลดล็อคขอบเขตเดิมก่อนเปลี่ยนโหมด เพื่อไม่ให้ถูกตีกรอบหลุด
+    map.setMaxBounds(null);
+    if (currentTileLayer && map.hasLayer(currentTileLayer)) map.removeLayer(currentTileLayer);
+    if (currentOverlayLayer && map.hasLayer(currentOverlayLayer)) map.removeLayer(currentOverlayLayer);
+    markers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
+    markers = [];
+  }
 
   if (selectedMode === 'campus') {
-    map.options.crs = L.CRS.EPSG3857;
     map.options.maxBoundsViscosity = 0.8;
     
     // ขอบเขตพิกัดจริงของโรงพยาบาลพยุหะคีรีตามที่ระบุ:
@@ -753,7 +779,6 @@ window.changeMapLevel = function () {
     const cfg = floorConfigs[selectedMode];
     if (!cfg) return;
 
-    map.options.crs = L.CRS.Simple;
     currentOverlayLayer = L.imageOverlay(cfg.imageUrl, cfg.bounds).addTo(map);
     
     // ล็อคขอบเขตไม่ให้เลื่อนหลุดผัง และคำนวณการย่อสุดให้พอดีจอพอดี
@@ -765,6 +790,10 @@ window.changeMapLevel = function () {
     const fitZoom = map.getBoundsZoom(cfg.bounds);
     map.setMinZoom(fitZoom); // ล็อคระดับย่อสุดให้หยุดที่พอดีกับหน้าจอ ไม่หลุดขอบ
   }
+
+  setTimeout(() => {
+    if (map) map.invalidateSize();
+  }, 100);
 
   renderMapPins();
 };
