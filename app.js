@@ -1106,6 +1106,7 @@ function renderMapPins() {
   markers = [];
 
   const isAdmin = currentUserRole === 'admin';
+  const isGuest = (!currentUserRole || currentUserRole === 'guest');
 
   if (currentMapMode === 'campus') {
     // โหลดตำแหน่งแลนด์มาร์กอาคารจาก localStorage (หรือค่าเริ่มต้น) เพื่อให้ปรับย้ายตำแหน่งได้
@@ -1267,9 +1268,9 @@ function renderMapPins() {
           ${item.building} (${item.location})<br>
           สถานะ: <b style="color:${color}">${isReady ? '✅ พร้อมใช้งาน' : item.status === 'REPAIRING' ? '🛠️ อยู่ระหว่างส่งซ่อม' : '⚠️ ชำรุด/แจ้งซ่อม'}</b><br>
           ${adminPopupHtml}
-          ${item.status === 'ISSUE' ? `<button onclick="markAssetRepairing('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#f59e0b; color:white;">🔧 ส่งซ่อมบำรุง</button>` : ''}
-          ${item.status === 'REPAIRING' ? `<button onclick="openRepairCompleteModal('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#10b981; color:white;">✅ ซ่อมเสร็จแล้ว</button>` : ''}
-          <button onclick="handleScanned('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#00695c; color:white;">ตรวจเช็กจุดนี้</button>
+          ${(!isGuest && item.status === 'ISSUE') ? `<button onclick="markAssetRepairing('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#f59e0b; color:white;">🔧 ส่งซ่อมบำรุง</button>` : ''}
+          ${(!isGuest && item.status === 'REPAIRING') ? `<button onclick="openRepairCompleteModal('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#10b981; color:white;">✅ ซ่อมเสร็จแล้ว</button>` : ''}
+          ${!isGuest ? `<button onclick="handleScanned('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#00695c; color:white;">ตรวจเช็กจุดนี้</button>` : ''}
         </div>
       `);
       markers.push(marker);
@@ -1345,11 +1346,13 @@ function renderMapPins() {
             ${isReady ? '✅ พร้อมใช้งาน' : item.status === 'REPAIRING' ? '🛠️ อยู่ระหว่างส่งซ่อม' : '⚠️ ชำรุด/แจ้งซ่อม'}
           </span><br>
           ${adminPopupHtml}
-          ${item.status === 'ISSUE' ? `<button onclick="markAssetRepairing('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#f59e0b; color:white;">🔧 ส่งซ่อมบำรุง</button>` : ''}
-          ${item.status === 'REPAIRING' ? `<button onclick="openRepairCompleteModal('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#10b981; color:white;">✅ ซ่อมเสร็จแล้ว (คืนสถานะปกติ)</button>` : ''}
+          ${(!isGuest && item.status === 'ISSUE') ? `<button onclick="markAssetRepairing('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#f59e0b; color:white;">🔧 ส่งซ่อมบำรุง</button>` : ''}
+          ${(!isGuest && item.status === 'REPAIRING') ? `<button onclick="openRepairCompleteModal('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background:#10b981; color:white;">✅ ซ่อมเสร็จแล้ว (คืนสถานะปกติ)</button>` : ''}
+          ${!isGuest ? `
           <button onclick="handleScanned('${item.assetId}')" class="btn-sm" style="margin-top:6px; width:100%; background: #00695c; color: white;">
             บันทึกตรวจเช็กจุดนี้
           </button>
+          ` : ''}
         </div>
       `);
       markers.push(marker);
@@ -1724,6 +1727,7 @@ const inspectForm = document.getElementById('inspection-form');
 if (inspectForm) {
   inspectForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!requireLogin('บันทึกผลการตรวจเช็ก')) return;
     const btn = document.getElementById('btn-save-inspect');
     btn.innerText = "กำลังบันทึกข้อมูล...";
     btn.disabled = true;
