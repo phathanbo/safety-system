@@ -901,6 +901,9 @@ tr:hover {
 /* Role-based Tab & Feature Visibility Guards */
 body.role-guest #tab-nav-scanner,
 body.role-guest #tab-nav-register,
+body.role-guest #tab-nav-assets,
+body.role-guest #tab-nav-history,
+body.role-guest #tab-nav-report,
 body.role-guest #tab-nav-backup,
 body.role-guest #tab-nav-admin,
 body.role-guest #btn-change-officer,
@@ -911,14 +914,12 @@ body.role-guest #admin-delete-all-btn,
 body.role-guest #admin-map-drag-notice,
 body.role-guest #admin-add-asset-btn,
 body.role-guest #btn-edit-guide,
-body.role-guest #report-controls-card {
+body.role-guest #report-controls-card,
+body.role-guest #executive-report-toolbar {
   display: none !important;
 }
 
-body.role-guest #tab-nav-dashboard,
-body.role-guest #tab-nav-assets,
-body.role-guest #tab-nav-history,
-body.role-guest #tab-nav-report {
+body.role-guest #tab-nav-dashboard {
   display: inline-block !important;
 }
 

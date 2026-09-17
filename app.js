@@ -437,6 +437,11 @@ function requireLogin(actionName = 'ดำเนินการนี้') {
 // 1. การสลับแท็บเมนู
 // ==========================================
 window.switchTab = function (tabId) {
+  // บล็อกไม่ให้ Guest สลับไปแท็บอื่นนอกจาก Dashboard & แผนผัง
+  if ((currentUserRole === 'guest' || !currentUserRole) && tabId !== 'dashboard') {
+    tabId = 'dashboard';
+  }
+
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
@@ -3611,14 +3616,14 @@ function applyUserSession(name, role) {
     }
 
   } else if (role === 'guest' || !role) {
-    // 0. Guest Mode: ดูแดชบอร์ด, ทะเบียนอุปกรณ์, ประวัติ และรายงานได้ แต่ซ่อนปุ่มและการกระทำแอดมิน/ช่าง
+    // 0. Guest Mode: ดูได้เฉพาะหน้าแดชบอร์ด & แผนผังเท่านั้น ซ่อนแท็บและฟังก์ชันอื่นทั้งหมด
     if (navDashboard) navDashboard.style.display = 'inline-block';
-    if (navAssets) navAssets.style.display = 'inline-block';
-    if (navHistory) navHistory.style.display = 'inline-block';
-    if (navReport) navReport.style.display = 'inline-block';
 
     if (navScanner) navScanner.style.display = 'none';
     if (navRegister) navRegister.style.display = 'none';
+    if (navAssets) navAssets.style.display = 'none';
+    if (navHistory) navHistory.style.display = 'none';
+    if (navReport) navReport.style.display = 'none';
     if (navBackup) navBackup.style.display = 'none';
     if (navAdmin) navAdmin.style.display = 'none';
 
@@ -3626,7 +3631,7 @@ function applyUserSession(name, role) {
     if (adminAddAssetBtn) adminAddAssetBtn.style.display = 'none';
 
     const currentActiveTab = document.querySelector('.tab-content.active');
-    if (currentActiveTab && ['tab-scanner', 'tab-register', 'tab-backup', 'tab-admin'].includes(currentActiveTab.id)) {
+    if (currentActiveTab && currentActiveTab.id !== 'tab-dashboard') {
       window.switchTab('dashboard');
     }
   } else {
