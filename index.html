@@ -954,31 +954,145 @@
     <!-- TAB 6: ออกรายงานเสนอผู้บริหาร (Executive Inspection Report) -->
     <!-- ============================================== -->
     <section id="tab-report" class="tab-content">
-      <!-- แถบเครื่องมือรายงานสำหรับ ผอ. (แสดงอัตโนมัติไม่ต้องกรอกอะไรเลย) -->
       <!-- แถบเครื่องมือรายงานสรุปเสนอผู้บริหาร (Clean Report Header Bar) -->
       <div id="executive-report-toolbar" class="card no-print"
         style="background:linear-gradient(135deg, #004d40, #00695c); color:white; padding:16px 20px; margin-bottom:14px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h3 style="margin:0; color:white; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
-              <span>📑 สรุปรายงานผลการตรวจสอบความพร้อมอุปกรณ์ความปลอดภัย</span>
+              <span>📑 ระบบรายงานผลการตรวจสอบความพร้อมอุปกรณ์ความปลอดภัย</span>
             </h3>
             <p style="margin:4px 0 0 0; color:#e0f2f1; font-size:0.86rem;">
-              โรงพยาบาลพยุหะคีรี • ประมวลผลข้อมูลการตรวจเช็กจริงครบทุกอาคาร (6 อาคาร 48 จุดตรวจ)
+              โรงพยาบาลพยุหะคีรี • สรุปผลเสนอผู้อำนวยการโรงพยาบาลพยุหะคีรี
             </p>
           </div>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <!-- สลับรูปแบบรายงาน -->
+            <div style="background:rgba(255,255,255,0.15); padding:3px; border-radius:8px; display:inline-flex; gap:3px;">
+              <button id="btn-mode-memo" onclick="setReportFormat('memo')" class="btn-sm"
+                style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.85rem; padding:6px 12px; border-radius:6px; border:none; cursor:pointer;">
+                📄 บันทึกข้อความ (ราชการ)
+              </button>
+              <button id="btn-mode-detailed" onclick="setReportFormat('detailed')" class="btn-sm"
+                style="background:transparent; color:#ffffff; font-weight:600; font-size:0.85rem; padding:6px 12px; border-radius:6px; border:none; cursor:pointer;">
+                📊 รายงานสถิติละเอียด
+              </button>
+            </div>
+
             <button id="btn-simulate-full" onclick="simulateFullInspection()" class="btn-sm"
-              style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+              style="background:#0284c7; color:#ffffff; font-weight:600; font-size:0.88rem; padding:8px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               ⚡ จำลองผลตรวจ 100%
             </button>
-            <button onclick="generateExecutiveReport()" class="btn-sm"
-              style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:10px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+            <button onclick="renderSelectedReport()" class="btn-sm"
+              style="background:#059669; color:#ffffff; font-weight:600; font-size:0.88rem; padding:8px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
               🔄 รีเฟรชรายงาน
             </button>
+            <button id="btn-toggle-memo-toolbar" onclick="toggleMemoEditToolbar()" class="btn-sm"
+              title="คลิกเพื่อ เปิด/ซ่อน แถบเครื่องมือปรับฟอนต์ ระยะขอบ และลายเซ็น"
+              style="background:#f59e0b; color:#1e293b; font-weight:700; font-size:0.88rem; padding:8px 14px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); display:inline-flex; align-items:center; gap:5px;">
+              ✏️ <span>ปรับแต่งรายละเอียด / จัดหน้า</span>
+            </button>
             <button id="btn-print-executive-report" onclick="printExecutiveReport()" class="btn-sm"
-              style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+              style="background:#ffffff; color:#004d40; font-weight:700; font-size:0.92rem; padding:8px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
               🖨️ สั่งพิมพ์ / บันทึก PDF (A4)
+            </button>
+          </div>
+        </div>
+
+        <!-- แถบเครื่องมือปรับแต่งข้อความและจัดหน้า (Memo Document Formatting Controls) -->
+        <div id="memo-edit-toolbar" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.2); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:0.85rem;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-weight:700; color:#d1fae5; display:flex; align-items:center; gap:4px;">
+              ✏️ <span>ปรับแต่งเอกสาร & กั้นหน้า-หลัง:</span>
+            </span>
+            <span style="opacity:0.9; color:#f1f5f9; font-size:0.8rem;">(คลิกแก้ไขข้อความบนกระดาษได้โดยตรง)</span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <!-- ปรับขนาดตัวอักษรแบบพิมพ์เลขได้เหมือน MS Word -->
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="color:#e2e8f0; font-size:0.82rem;">ฟอนต์:</span>
+              <select id="memo-font-target" onchange="updateMemoFontDisplay()" style="background:#ffffff; color:#0f172a; border:none; border-radius:6px; padding:3px 6px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                <option value="all">ทั้งเอกสาร</option>
+                <option value="title">หัวกระดาษ (บันทึกข้อความ)</option>
+                <option value="header">หัวหนังสือ (ที่/วันที่/เรื่อง)</option>
+                <option value="body">เนื้อหา (ความเป็นมา/พิจารณา/ข้อเสนอ)</option>
+                <option value="sign">ส่วนลงนาม & กล่องเสนอ/อนุมัติ</option>
+              </select>
+              <button onclick="adjustTargetMemoFont(-1)" title="ลดขนาดตัวอักษร" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:2px 7px; cursor:pointer; font-weight:700; font-size:0.82rem;">A-</button>
+              <input type="number" id="memo-font-size-input" value="16" min="8" max="48" step="0.5" onchange="setMemoFontExact(this.value)" oninput="setMemoFontExact(this.value)" title="พิมพ์ระบุขนาดตัวอักษร (pt) ได้โดยตรงเหมือน MS Word" style="width:48px; text-align:center; background:#ffffff; color:#0f172a; border:1px solid #94a3b8; border-radius:6px; padding:2px 4px; font-weight:700; font-size:0.82rem;">
+              <span style="color:#ffffff; font-size:0.8rem; font-weight:600;">pt</span>
+              <button onclick="adjustTargetMemoFont(1)" title="เพิ่มขนาดตัวอักษร" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:2px 7px; cursor:pointer; font-weight:700; font-size:0.82rem;">A+</button>
+            </div>
+
+            <span style="color:rgba(255,255,255,0.4);">|</span>
+
+            <!-- ปรับระยะขอบ 4 ทิศทาง (Margins: บน, ล่าง, ซ้าย, ขวา) แบบกรอกตัวเลขโดยตรงได้ -->
+            <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.18); padding:3px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.15);">
+              <span style="color:#a7f3d0; font-size:0.82rem; font-weight:700;">ระยะขอบ:</span>
+              
+              <label style="display:flex; align-items:center; gap:2px; font-size:0.78rem; color:#f1f5f9;">
+                <span>บน</span>
+                <input type="number" id="margin-in-top" value="2.0" step="0.1" min="0.5" max="5.0" onchange="setMemoMarginExact('top', this.value)" oninput="setMemoMarginExact('top', this.value)" title="ขอบบน (ซม.)" style="width:44px; text-align:center; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:4px; padding:1px 2px; font-size:0.8rem; font-weight:600;">
+              </label>
+
+              <label style="display:flex; align-items:center; gap:2px; font-size:0.78rem; color:#f1f5f9;">
+                <span>ล่าง</span>
+                <input type="number" id="margin-in-bottom" value="2.0" step="0.1" min="0.5" max="5.0" onchange="setMemoMarginExact('bottom', this.value)" oninput="setMemoMarginExact('bottom', this.value)" title="ขอบล่าง (ซม.)" style="width:44px; text-align:center; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:4px; padding:1px 2px; font-size:0.8rem; font-weight:600;">
+              </label>
+
+              <label style="display:flex; align-items:center; gap:2px; font-size:0.78rem; color:#f1f5f9;">
+                <span>ซ้าย</span>
+                <input type="number" id="margin-in-left" value="2.5" step="0.1" min="0.5" max="5.0" onchange="setMemoMarginExact('left', this.value)" oninput="setMemoMarginExact('left', this.value)" title="ขอบซ้าย (ซม.) มาตรฐาน 2.5 ซม." style="width:44px; text-align:center; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:4px; padding:1px 2px; font-size:0.8rem; font-weight:600;">
+              </label>
+
+              <label style="display:flex; align-items:center; gap:2px; font-size:0.78rem; color:#f1f5f9;">
+                <span>ขวา</span>
+                <input type="number" id="margin-in-right" value="2.0" step="0.1" min="0.5" max="5.0" onchange="setMemoMarginExact('right', this.value)" oninput="setMemoMarginExact('right', this.value)" title="ขอบขวา (ซม.) มาตรฐาน 2.0 ซม." style="width:44px; text-align:center; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:4px; padding:1px 2px; font-size:0.8rem; font-weight:600;">
+              </label>
+              <span style="color:#e2e8f0; font-size:0.75rem;">ซม.</span>
+
+              <button onclick="setMemoMarginPresetStandard()" title="คืนค่าระยะขอบมาตรฐานงานสารบรรณ (บน 2.0, ล่าง 2.0, ซ้าย 2.5, ขวา 2.0 ซม.)" style="background:rgba(255,255,255,0.25); color:#ffffff; border:1px solid rgba(255,255,255,0.3); border-radius:4px; padding:1px 6px; font-size:0.75rem; cursor:pointer; font-weight:600;">มาตรฐาน</button>
+            </div>
+
+            <span style="color:rgba(255,255,255,0.4);">|</span>
+
+            <!-- ปรับระยะบรรทัด -->
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="color:#e2e8f0; font-size:0.82rem;">ระยะบรรทัด:</span>
+              <button onclick="adjustMemoSpacing(-0.1)" title="บีบบรรทัดกระชับขึ้น" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 7px; cursor:pointer; font-size:0.82rem;">บีบ</button>
+              <button onclick="adjustMemoSpacing(0.1)" title="ขยายระยะบรรทัด" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 7px; cursor:pointer; font-size:0.82rem;">ขยาย</button>
+            </div>
+
+            <!-- ปรับตำแหน่งกล่อง ผอ. -->
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="color:#e2e8f0; font-size:0.82rem;">กล่อง ผอ.:</span>
+              <button onclick="setExecBoxPosition('left')" id="btn-exec-pos-left" title="วางกล่อง ผอ. ฝั่งซ้ายล่าง" style="background:#ffffff; color:#004d40; border:none; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:700; font-size:0.82rem;">ซ้าย</button>
+              <button onclick="setExecBoxPosition('right')" id="btn-exec-pos-right" title="วางกล่อง ผอ. ฝั่งขวา (ต่อท้าย)" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:600; font-size:0.82rem;">ขวา</button>
+              <button onclick="adjustExecBoxMarginTop(-5)" title="เลื่อนกล่อง ผอ. ขึ้น" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 6px; cursor:pointer; font-size:0.82rem;">▲</button>
+              <button onclick="adjustExecBoxMarginTop(5)" title="เลื่อนกล่อง ผอ. ลง" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 6px; cursor:pointer; font-size:0.82rem;">▼</button>
+            </div>
+
+            <span style="color:rgba(255,255,255,0.4);">|</span>
+
+            <!-- ลายเซ็น: ช่าง, หน.กลุ่มงาน, ผอ. -->
+            <div style="display:flex; align-items:center; gap:4px;">
+              <button onclick="openSignatureModal('inspector')" title="วาดหรืออัปโหลดรูปภาพลายเซ็นของเจ้าหน้าที่ช่าง" style="background:#0284c7; color:white; border:none; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:600; font-size:0.8rem; display:flex; align-items:center; gap:3px;">
+                ✍️ <span>เซ็นชื่อช่าง</span>
+              </button>
+              <button onclick="openSignatureModal('chef')" title="วาดหรืออัปโหลดรูปภาพลายเซ็นของหัวหน้ากลุ่มงานบริหารทั่วไป" style="background:#4338ca; color:white; border:none; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:600; font-size:0.8rem; display:flex; align-items:center; gap:3px;">
+                ✍️ <span>เซ็นชื่อ หน.กลุ่มงาน</span>
+              </button>
+              <button onclick="openSignatureModal('executive')" title="วาดหรืออัปโหลดรูปภาพลายเซ็นของผู้อำนวยการ" style="background:#0f766e; color:white; border:none; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:600; font-size:0.8rem; display:flex; align-items:center; gap:3px;">
+                ✍️ <span>เซ็นชื่อ ผอ.</span>
+              </button>
+            </div>
+
+            <span style="color:rgba(255,255,255,0.4);">|</span>
+
+            <!-- รีเซ็ตเป็นข้อความเดิม -->
+            <button onclick="resetMemoContent()" title="คืนค่าข้อความเริ่มต้นจากระบบ" style="background:rgba(239,68,68,0.25); color:#fee2e2; border:1px solid rgba(248,113,113,0.4); border-radius:6px; padding:3px 10px; cursor:pointer; font-size:0.82rem;">
+              🔄 รีเซ็ตเดิม
             </button>
           </div>
         </div>
@@ -988,7 +1102,7 @@
       <div id="executive-report-container" class="card"
         style="padding:0; background:white; border:none; box-shadow:none;">
         <div id="report-content-body">
-          <!-- เนื้อหารายงานจะถูกเรนเดอร์โดย generateExecutiveReport() -->
+          <!-- เนื้อหารายงานจะถูกเรนเดอร์โดย renderSelectedReport() -->
         </div>
       </div>
     </section>
@@ -1257,6 +1371,70 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: วาดหรืออัปโหลดลายเซ็นเจ้าหน้าที่ (Signature Pad Modal) -->
+  <!-- ============================================== -->
+  <div id="signature-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeSignatureModal()">
+    <div class="auth-card" style="max-width:440px;" onclick="event.stopPropagation()">
+      <button class="modal-close-btn" onclick="closeSignatureModal()" title="ปิด">✕</button>
+
+      <div class="auth-header" style="background:linear-gradient(135deg, #0284c7, #0369a1); padding:16px 20px;">
+        <div class="auth-logo-badge" style="width:42px; height:42px; font-size:22px;">✍️</div>
+        <h3 id="signature-modal-title" class="auth-title" style="color:white; font-size:1.15rem;">บันทึกลายมือชื่อเจ้าหน้าที่</h3>
+        <p id="signature-modal-subtitle" class="auth-subtitle" style="color:#e0f2f1; font-size:0.8rem;">วาดลายเซ็นหรืออัปโหลดรูปภาพลายเซ็นเพื่อใส่ลงในเอกสาร</p>
+      </div>
+
+      <div class="auth-body" style="padding:18px 20px;">
+        <!-- ตัวเลือกแท็บ วาด vs อัปโหลด -->
+        <div style="display:flex; gap:8px; margin-bottom:12px; background:#f1f5f9; padding:3px; border-radius:8px;">
+          <button type="button" id="tab-sig-draw-btn" onclick="switchSigTab('draw')" style="flex:1; padding:6px; font-size:0.82rem; font-weight:700; border:none; border-radius:6px; background:white; color:#0284c7; cursor:pointer;">
+            ✏️ วาดลายเซ็น
+          </button>
+          <button type="button" id="tab-sig-upload-btn" onclick="switchSigTab('upload')" style="flex:1; padding:6px; font-size:0.82rem; font-weight:600; border:none; border-radius:6px; background:transparent; color:#64748b; cursor:pointer;">
+            📁 อัปโหลดรูปภาพ
+          </button>
+        </div>
+
+        <!-- หน้าจอวาดลายเซ็น (Canvas) -->
+        <div id="sig-draw-container">
+          <div style="border:1.5px dashed #cbd5e1; border-radius:10px; background:#fafafa; position:relative; overflow:hidden; touch-action:none;">
+            <canvas id="signature-canvas" width="380" height="150" style="display:block; width:100%; height:150px; cursor:crosshair;"></canvas>
+            <div style="position:absolute; bottom:6px; left:12px; font-size:0.75rem; color:#94a3b8; pointer-events:none;">
+              * ใช้เมาส์หรือนิ้ววาดลายมือชื่อในกรอบนี้
+            </div>
+          </div>
+          <div style="text-align:right; margin-top:6px;">
+            <button type="button" onclick="clearSignatureCanvas()" style="background:none; border:none; color:#dc2626; font-size:0.8rem; cursor:pointer; text-decoration:underline;">
+              ล้างหน้าจอวาดใหม่
+            </button>
+          </div>
+        </div>
+
+        <!-- หน้าจออัปโหลดรูปภาพลายเซ็น -->
+        <div id="sig-upload-container" style="display:none;">
+          <div style="border:1.5px dashed #cbd5e1; border-radius:10px; padding:24px 16px; text-align:center; background:#fafafa;">
+            <input type="file" id="sig-file-input" accept="image/*" onchange="handleSigFileUpload(event)" style="display:none;">
+            <button type="button" onclick="document.getElementById('sig-file-input').click()" style="background:#0284c7; color:white; border:none; border-radius:8px; padding:8px 16px; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              📷 เลือกไฟล์รูปภาพลายเซ็น (PNG/JPG)
+            </button>
+            <div id="sig-preview-wrapper" style="margin-top:12px; display:none;">
+              <img id="sig-preview-img" src="" alt="ลายเซ็น" style="max-height:80px; max-width:100%; object-fit:contain; border:1px solid #e2e8f0; padding:4px; border-radius:6px; background:white;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button type="button" onclick="closeSignatureModal()" class="btn-secondary" style="flex:1; margin-top:0;">
+            ยกเลิก
+          </button>
+          <button type="button" onclick="saveSignature()" class="btn-primary" style="flex:2; margin-top:0; background:#0284c7;">
+            💾 นำลายเซ็นไปใช้
+          </button>
+        </div>
       </div>
     </div>
   </div>

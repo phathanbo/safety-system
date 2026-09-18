@@ -3739,6 +3739,1042 @@ const buildingMetadata = {
   building_canteen: { name: 'อาคารโรงอาหาร', short: 'โรงอาหาร' }
 };
 
+// สถานะการจัดรูปแบบรายงานและเอกสาร
+let currentReportFormat = 'memo'; // 'memo' = บันทึกข้อความราชการ, 'detailed' = รายงานสถิติละเอียด
+let memoLineSpacing = 1.45; // ระยะห่างบรรทัด
+// ระยะขอบ 4 ทิศทาง (มาตรฐานงานสารบรรณไทย: บน 2.0 ซม., ซ้าย 2.5 ซม., ขวา 2.0 ซม., ล่าง 2.0 ซม.)
+let memoMargins = {
+  top: 2.0,
+  bottom: 2.0,
+  left: 2.5,
+  right: 2.0
+};
+let memoMarginCm = 2.5; // fallback compat
+let memoExecBoxPosition = 'left'; // 'left' = ซ้ายล่าง, 'right' = ขวาล่าง
+let memoExecBoxOffset = { x: 0, y: 0 }; // ลากอิสระด้วยเมาส์
+let memoExecBoxMarginTop = 16; // px
+let memoChefBoxOffset = { x: 0, y: 0 }; // ลากอิสระสำหรับกล่องหัวหน้ากลุ่มงาน
+
+// การปรับขนาดตัวอักษรแยกเฉพาะส่วน (Granular Font Sizes)
+let memoFontConfig = {
+  title: 29,  // ข้อความ "บันทึกข้อความ"
+  header: 16, // หัวหนังสือ: ส่วนราชการ, ที่, วันที่, เรื่อง, เรียน
+  body: 16,   // เนื้อหา: ความเป็นมา, ข้อพิจารณา, ข้อเสนอ
+  sign: 15    // ส่วนลงนาม: ผู้รายงาน, กล่องเสนอ ผอ., คำสั่งการ ผอ.
+};
+
+// ฟังก์ชันปรับขนาดฟอนต์แบบตรงตามค่าตัวเลข (พิมพ์เลขได้เหมือน MS Word)
+window.setMemoFontExact = function(val) {
+  const target = document.getElementById('memo-font-target')?.value || 'all';
+  const size = Math.max(8, Math.min(48, parseFloat(val) || 16));
+
+  if (target === 'all') {
+    memoFontConfig.header = size;
+    memoFontConfig.body = size;
+    memoFontConfig.sign = Math.max(8, size - 1);
+  } else {
+    memoFontConfig[target] = size;
+  }
+
+  window.updateMemoFontDisplay();
+  window.applyMemoStyles();
+};
+
+// ฟังก์ชันปรับระยะขอบ 4 ด้านแบบระบุตัวเลขโดยตรง (Top / Bottom / Left / Right)
+window.setMemoMarginExact = function(side, val) {
+  const num = Math.max(0.5, Math.min(5.0, parseFloat(val) || 2.0));
+  if (memoMargins[side] !== undefined) {
+    memoMargins[side] = parseFloat(num.toFixed(1));
+  }
+  window.applyMemoStyles();
+};
+
+// คืนค่าระยะขอบเป็นมาตรฐานหนังสือราชการไทย (บน 2.0, ล่าง 2.0, ซ้าย 2.5, ขวา 2.0 ซม.)
+window.setMemoMarginPresetStandard = function() {
+  memoMargins = {
+    top: 2.0,
+    bottom: 2.0,
+    left: 2.5,
+    right: 2.0
+  };
+  window.applyMemoStyles();
+};
+
+// จัดการตำแหน่งกล่องคำสั่งการของ ผอ.
+window.setExecBoxPosition = function(pos) {
+  memoExecBoxPosition = pos;
+  memoExecBoxOffset = { x: 0, y: 0 }; // รีเซ็ตการลากเมื่อกดสลับฝั่ง
+  const btnLeft = document.getElementById('btn-exec-pos-left');
+  const btnRight = document.getElementById('btn-exec-pos-right');
+  if (btnLeft && btnRight) {
+    if (pos === 'left') {
+      btnLeft.style.background = '#ffffff';
+      btnLeft.style.color = '#004d40';
+      btnLeft.style.fontWeight = '700';
+      btnRight.style.background = 'rgba(255,255,255,0.2)';
+      btnRight.style.color = '#ffffff';
+      btnRight.style.fontWeight = '600';
+    } else {
+      btnRight.style.background = '#ffffff';
+      btnRight.style.color = '#004d40';
+      btnRight.style.fontWeight = '700';
+      btnLeft.style.background = 'rgba(255,255,255,0.2)';
+      btnLeft.style.color = '#ffffff';
+      btnLeft.style.fontWeight = '600';
+    }
+  }
+  window.renderOfficialMemo();
+};
+
+window.adjustExecBoxMarginTop = function(delta) {
+  memoExecBoxMarginTop = Math.max(-20, Math.min(80, memoExecBoxMarginTop + delta));
+  const box = document.getElementById('memo-exec-box-card');
+  if (box) box.style.marginTop = `${memoExecBoxMarginTop}px`;
+};
+
+// ระบบลากย้ายกล่องคำสั่งการ ผอ. ด้วยเมาส์ / สัมผัส (Drag & Drop)
+let isDraggingExecBox = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let boxStartOffsetX = 0;
+let boxStartOffsetY = 0;
+
+window.initExecBoxDraggable = function() {
+  const box = document.getElementById('memo-exec-box-card');
+  const handle = document.getElementById('memo-exec-box-drag-handle');
+  if (!box) return;
+
+  const targetEl = handle || box;
+
+  const onStart = (e) => {
+    // ไม่ลากเมื่อคลิกที่ปุ่ม, input หรือข้อความที่คลิกได้
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('span[onclick]')) {
+      return;
+    }
+    isDraggingExecBox = true;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStartX = clientX;
+    dragStartY = clientY;
+    boxStartOffsetX = memoExecBoxOffset.x || 0;
+    boxStartOffsetY = memoExecBoxOffset.y || 0;
+
+    box.style.cursor = 'grabbing';
+    box.style.zIndex = '30';
+    box.style.opacity = '0.92';
+    box.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!isDraggingExecBox) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - dragStartX;
+    const dy = clientY - dragStartY;
+
+    memoExecBoxOffset.x = Math.round(boxStartOffsetX + dx);
+    memoExecBoxOffset.y = Math.round(boxStartOffsetY + dy);
+
+    box.style.transform = `translate(${memoExecBoxOffset.x}px, ${memoExecBoxOffset.y}px)`;
+  };
+
+  const onEnd = () => {
+    if (!isDraggingExecBox) return;
+    isDraggingExecBox = false;
+    box.style.cursor = 'grab';
+    box.style.zIndex = '1';
+    box.style.opacity = '1';
+    box.style.boxShadow = 'none';
+
+    // บันทึกตำแหน่งกล่อง ผอ. ลงใน localStorage
+    try {
+      localStorage.setItem('pyh_memo_exec_box_offset', JSON.stringify(memoExecBoxOffset));
+    } catch(e) {}
+  };
+
+  targetEl.onmousedown = onStart;
+  targetEl.ontouchstart = onStart;
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onEnd);
+  window.addEventListener('touchend', onEnd);
+};
+
+// ระบบลากย้ายกล่องเสนอ ผอ. (หน.กลุ่มงาน) ด้วยเมาส์ / สัมผัส (Drag & Drop)
+let isDraggingChefBox = false;
+let chefDragStartX = 0;
+let chefDragStartY = 0;
+let chefBoxStartOffsetX = 0;
+let chefBoxStartOffsetY = 0;
+
+window.initChefBoxDraggable = function() {
+  const box = document.getElementById('memo-chef-box-card');
+  const handle = document.getElementById('memo-chef-box-drag-handle');
+  if (!box) return;
+
+  const targetEl = handle || box;
+
+  const onStart = (e) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('span[onclick]')) {
+      return;
+    }
+    isDraggingChefBox = true;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    chefDragStartX = clientX;
+    chefDragStartY = clientY;
+    chefBoxStartOffsetX = memoChefBoxOffset.x || 0;
+    chefBoxStartOffsetY = memoChefBoxOffset.y || 0;
+
+    box.style.cursor = 'grabbing';
+    box.style.zIndex = '30';
+    box.style.opacity = '0.92';
+    box.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!isDraggingChefBox) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - chefDragStartX;
+    const dy = clientY - chefDragStartY;
+
+    memoChefBoxOffset.x = Math.round(chefBoxStartOffsetX + dx);
+    memoChefBoxOffset.y = Math.round(chefBoxStartOffsetY + dy);
+
+    box.style.transform = `translate(${memoChefBoxOffset.x}px, ${memoChefBoxOffset.y}px)`;
+  };
+
+  const onEnd = () => {
+    if (!isDraggingChefBox) return;
+    isDraggingChefBox = false;
+    box.style.cursor = 'grab';
+    box.style.zIndex = '1';
+    box.style.opacity = '1';
+    box.style.boxShadow = 'none';
+
+    try {
+      localStorage.setItem('pyh_memo_chef_box_offset', JSON.stringify(memoChefBoxOffset));
+    } catch(e) {}
+  };
+
+  targetEl.onmousedown = onStart;
+  targetEl.ontouchstart = onStart;
+
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('mouseup', onEnd);
+  window.addEventListener('touchend', onEnd);
+};
+
+// ==============================================
+// ระบบบันทึกลายมือชื่อเจ้าหน้าที่ (Signature Pad)
+// ==============================================
+let sigCanvas = null;
+let sigCtx = null;
+let isDrawingSig = false;
+let currentSigDataUrl = null;
+let sigTargetRole = 'inspector'; // 'inspector' or 'executive'
+
+window.openSignatureModal = function(target = 'inspector') {
+  sigTargetRole = target;
+  currentSigDataUrl = null;
+  const modal = document.getElementById('signature-modal');
+  if (!modal) return;
+
+  const modalTitle = document.getElementById('signature-modal-title');
+  const modalSubtitle = document.getElementById('signature-modal-subtitle');
+  if (modalTitle) {
+    if (target === 'executive') {
+      modalTitle.innerText = 'บันทึกลายมือชื่อผู้อำนวยการ';
+    } else if (target === 'chef') {
+      modalTitle.innerText = 'บันทึกลายมือชื่อหัวหน้ากลุ่มงานบริหารทั่วไป';
+    } else {
+      modalTitle.innerText = 'บันทึกลายมือชื่อเจ้าหน้าที่ช่าง';
+    }
+  }
+  if (modalSubtitle) {
+    if (target === 'executive') {
+      modalSubtitle.innerText = 'วาดลายเซ็นหรืออัปโหลดรูปภาพลายเซ็น ผอ. เพื่อใส่ลงในเอกสาร';
+    } else if (target === 'chef') {
+      modalSubtitle.innerText = 'วาดลายเซ็นหรืออัปโหลดรูปภาพลายเซ็นของหัวหน้ากลุ่มงาน เพื่อเสนอ ผอ.';
+    } else {
+      modalSubtitle.innerText = 'วาดลายเซ็นหรืออัปโหลดรูปภาพลายเซ็นเพื่อใส่ลงในเอกสาร';
+    }
+  }
+
+  // เคลียร์พรีวิวรูปถ้ามี
+  const previewWrapper = document.getElementById('sig-preview-wrapper');
+  const previewImg = document.getElementById('sig-preview-img');
+  const fileInput = document.getElementById('sig-file-input');
+  if (previewWrapper) previewWrapper.style.display = 'none';
+  if (previewImg) previewImg.src = '';
+  if (fileInput) fileInput.value = '';
+
+  modal.classList.remove('hidden');
+
+  setTimeout(() => {
+    initSignatureCanvas();
+  }, 100);
+};
+
+window.closeSignatureModal = function() {
+  const modal = document.getElementById('signature-modal');
+  if (modal) modal.classList.add('hidden');
+};
+
+function initSignatureCanvas() {
+  sigCanvas = document.getElementById('signature-canvas');
+  if (!sigCanvas) return;
+  sigCtx = sigCanvas.getContext('2d');
+
+  // ปรับความละเอียด Retina / High DPI
+  const rect = sigCanvas.getBoundingClientRect();
+  const scale = window.devicePixelRatio || 1;
+  sigCanvas.width = (rect.width || 380) * scale;
+  sigCanvas.height = 150 * scale;
+  sigCtx.scale(scale, scale);
+
+  sigCtx.strokeStyle = "#0f172a";
+  sigCtx.lineWidth = 2.5;
+  sigCtx.lineCap = "round";
+  sigCtx.lineJoin = "round";
+
+  // Event Listeners สำหรับเมาส์และทัชสกรีน
+  const getPos = (e) => {
+    const cRect = sigCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - cRect.left,
+      y: clientY - cRect.top
+    };
+  };
+
+  const startDraw = (e) => {
+    e.preventDefault();
+    isDrawingSig = true;
+    const pos = getPos(e);
+    sigCtx.beginPath();
+    sigCtx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e) => {
+    if (!isDrawingSig) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    sigCtx.lineTo(pos.x, pos.y);
+    sigCtx.stroke();
+  };
+
+  const stopDraw = (e) => {
+    if (!isDrawingSig) return;
+    isDrawingSig = false;
+  };
+
+  sigCanvas.onmousedown = startDraw;
+  sigCanvas.onmousemove = draw;
+  window.onmouseup = stopDraw;
+
+  sigCanvas.ontouchstart = startDraw;
+  sigCanvas.ontouchmove = draw;
+  sigCanvas.ontouchend = stopDraw;
+
+  window.clearSignature();
+}
+
+window.clearSignature = function() {
+  if (!sigCanvas || !sigCtx) return;
+  const rect = sigCanvas.getBoundingClientRect();
+  sigCtx.clearRect(0, 0, rect.width || 380, 150);
+  currentSigDataUrl = null;
+};
+
+window.switchSigTab = function(mode) {
+  const drawTab = document.getElementById('sig-draw-container');
+  const uploadTab = document.getElementById('sig-upload-container');
+  const drawBtn = document.getElementById('tab-sig-draw');
+  const uploadBtn = document.getElementById('tab-sig-upload');
+
+  if (mode === 'draw') {
+    if (drawTab) drawTab.style.display = 'block';
+    if (uploadTab) uploadTab.style.display = 'none';
+    if (drawBtn) { drawBtn.style.background = 'white'; drawBtn.style.color = '#0284c7'; drawBtn.style.fontWeight = '700'; }
+    if (uploadBtn) { uploadBtn.style.background = 'transparent'; uploadBtn.style.color = '#64748b'; uploadBtn.style.fontWeight = '600'; }
+    setTimeout(initSignatureCanvas, 50);
+  } else {
+    if (drawTab) drawTab.style.display = 'none';
+    if (uploadTab) uploadTab.style.display = 'block';
+    if (uploadBtn) { uploadBtn.style.background = 'white'; uploadBtn.style.color = '#0284c7'; uploadBtn.style.fontWeight = '700'; }
+    if (drawBtn) { drawBtn.style.background = 'transparent'; drawBtn.style.color = '#64748b'; drawBtn.style.fontWeight = '600'; }
+  }
+};
+
+window.handleSigFileUpload = function(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentSigDataUrl = e.target.result;
+    const previewWrapper = document.getElementById('sig-preview-wrapper');
+    const previewImg = document.getElementById('sig-preview-img');
+    if (previewImg && previewWrapper) {
+      previewImg.src = currentSigDataUrl;
+      previewWrapper.style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.saveSignature = async function() {
+  const uploadTab = document.getElementById('sig-upload-container');
+  const isUploadMode = uploadTab && uploadTab.style.display !== 'none';
+
+  let finalSigUrl = null;
+  if (isUploadMode) {
+    finalSigUrl = currentSigDataUrl;
+  } else if (sigCanvas) {
+    finalSigUrl = sigCanvas.toDataURL("image/png");
+  }
+
+  if (!finalSigUrl) {
+    alert("กรุณาวาดลายเซ็นหรืออัปโหลดรูปภาพก่อนบันทึก");
+    return;
+  }
+
+  const now = new Date();
+  const fullThaiDateStr = formatThaiFullDate(now);
+
+  if (sigTargetRole === 'executive') {
+    // บันทึกลายเซ็นผู้อำนวยการ
+    const defaultApprover = getCleanName(document.getElementById('report-approver-name')?.value.trim() || (currentUserRole === 'executive' ? currentOfficer : "นางสาวศิริพรรณ ชมพูภู่"));
+    
+    // ดึง decision ที่เคยเลือกไว้ หรือตั้งเป็น acknowledge
+    let prevDecision = 'acknowledge';
+    try {
+      const rawDec = localStorage.getItem('pyh_executive_decision');
+      if (rawDec) {
+        const d = JSON.parse(rawDec);
+        if (d && d.decision) prevDecision = d.decision;
+      }
+    } catch(e) {}
+
+    const certData = {
+      approver: defaultApprover,
+      decision: prevDecision,
+      decisionLabel: (prevDecision === 'acknowledge') ? 'รับทราบ' : 'อนุมัติซ่อมแซม',
+      signatureImg: finalSigUrl,
+      certifiedAt: now.toISOString(),
+      certifiedDateStr: fullThaiDateStr,
+      certifiedTimeStr: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    localStorage.setItem('pyh_exec_certification', JSON.stringify(certData));
+    localStorage.setItem('pyh_executive_decision', JSON.stringify({
+      decision: prevDecision,
+      savedAt: now.toISOString()
+    }));
+
+    if (isFirebaseReady() && db) {
+      try {
+        await setDoc(doc(db, "system_state", "report_certifications"), {
+          exec_cert: certData,
+          exec_decision: { decision: prevDecision, savedAt: now.toISOString() },
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore sync exec_cert error:", e);
+      }
+    }
+
+    closeSignatureModal();
+    renderExecutiveCertificationUI();
+    alert("✍️ บันทึกลายมือชื่อของผู้อำนวยการลงในเอกสารเรียบร้อยแล้ว!");
+  } else if (sigTargetRole === 'chef') {
+    // บันทึกลายเซ็นหัวหน้ากลุ่มงานบริหารทั่วไป (นายคมสัน ศรีสิงห์)
+    const defaultChef = getCleanName(document.getElementById('report-reviewer-name')?.value.trim() || "นายคมสัน ศรีสิงห์");
+    const certData = {
+      officer: defaultChef,
+      role: 'chef_inspector',
+      signatureImg: finalSigUrl,
+      certifiedAt: now.toISOString(),
+      certifiedDateStr: fullThaiDateStr,
+      certifiedTimeStr: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    localStorage.setItem('pyh_chef_certification', JSON.stringify(certData));
+
+    if (isFirebaseReady() && db) {
+      try {
+        await setDoc(doc(db, "system_state", "report_certifications"), {
+          chef_cert: certData,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore sync chef_cert error:", e);
+      }
+    }
+
+    closeSignatureModal();
+    renderChefCertificationUI();
+    alert("✍️ บันทึกลายมือชื่อของหัวหน้ากลุ่มงานบริหารทั่วไปลงในเอกสารเรียบร้อยแล้ว!");
+  } else {
+    // บันทึกลายเซ็นของช่างผู้ตรวจลง localStorage
+    const cleanName = getCleanName(currentOfficer) || "นายสุวิทย์ พวงสมบัติ";
+    const certData = {
+      officer: cleanName,
+      role: 'inspector',
+      signatureImg: finalSigUrl,
+      certifiedAt: now.toISOString(),
+      certifiedDateStr: fullThaiDateStr,
+      certifiedTimeStr: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    localStorage.setItem('pyh_tech_certification', JSON.stringify(certData));
+
+    if (isFirebaseReady() && db) {
+      try {
+        await setDoc(doc(db, "system_state", "report_certifications"), {
+          tech_cert: certData,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore sync tech_cert error:", e);
+      }
+    }
+
+    closeSignatureModal();
+    renderTechCertificationUI();
+    alert("✍️ บันทึกลายมือชื่อของเจ้าหน้าที่ช่างลงในเอกสารเรียบร้อยแล้ว!");
+  }
+};
+
+// แปลงเลขอารบิกเป็นเลขไทยสำหรับหนังสือราชการ
+function toThaiNumerals(num) {
+  if (num === null || num === undefined) return '';
+  const thaiDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+  return String(num).replace(/[0-9]/g, d => thaiDigits[d]);
+}
+
+window.setReportFormat = function (mode) {
+  currentReportFormat = mode;
+  const btnMemo = document.getElementById('btn-mode-memo');
+  const btnDetailed = document.getElementById('btn-mode-detailed');
+  const editToolbar = document.getElementById('memo-edit-toolbar');
+
+  if (btnMemo && btnDetailed) {
+    if (mode === 'memo') {
+      btnMemo.style.background = '#ffffff';
+      btnMemo.style.color = '#004d40';
+      btnMemo.style.fontWeight = '700';
+
+      btnDetailed.style.background = 'transparent';
+      btnDetailed.style.color = '#ffffff';
+      btnDetailed.style.fontWeight = '600';
+
+      if (editToolbar) editToolbar.style.display = 'flex';
+      const btnToggle = document.getElementById('btn-toggle-memo-toolbar');
+      if (btnToggle) btnToggle.style.display = 'inline-flex';
+    } else {
+      btnDetailed.style.background = '#ffffff';
+      btnDetailed.style.color = '#004d40';
+      btnDetailed.style.fontWeight = '700';
+
+      btnMemo.style.background = 'transparent';
+      btnMemo.style.color = '#ffffff';
+      btnMemo.style.fontWeight = '600';
+
+      if (editToolbar) editToolbar.style.display = 'none';
+      const btnToggle = document.getElementById('btn-toggle-memo-toolbar');
+      if (btnToggle) btnToggle.style.display = 'none';
+    }
+  }
+
+  window.renderSelectedReport();
+};
+
+window.toggleMemoEditToolbar = function () {
+  const editToolbar = document.getElementById('memo-edit-toolbar');
+  if (!editToolbar) return;
+  const isHidden = (window.getComputedStyle(editToolbar).display === 'none');
+  editToolbar.style.display = isHidden ? 'flex' : 'none';
+};
+
+// ฟังก์ชันปรับขนาดตัวอักษรเฉพาะส่วนที่เลือก หรือ ทั้งเอกสาร
+window.adjustTargetMemoFont = function (delta) {
+  const target = document.getElementById('memo-font-target')?.value || 'all';
+
+  if (target === 'all') {
+    memoFontConfig.header = Math.max(12, Math.min(22, memoFontConfig.header + delta));
+    memoFontConfig.body = Math.max(12, Math.min(22, memoFontConfig.body + delta));
+    memoFontConfig.sign = Math.max(11, Math.min(20, memoFontConfig.sign + delta));
+  } else if (target === 'title') {
+    memoFontConfig.title = Math.max(18, Math.min(48, (memoFontConfig.title || 29) + delta));
+  } else if (target === 'header') {
+    memoFontConfig.header = Math.max(12, Math.min(22, memoFontConfig.header + delta));
+  } else if (target === 'body') {
+    memoFontConfig.body = Math.max(12, Math.min(22, memoFontConfig.body + delta));
+  } else if (target === 'sign') {
+    memoFontConfig.sign = Math.max(11, Math.min(20, memoFontConfig.sign + delta));
+  }
+
+  window.updateMemoFontDisplay();
+  window.applyMemoStyles();
+};
+
+window.updateMemoFontDisplay = function () {
+  const target = document.getElementById('memo-font-target')?.value || 'all';
+  const input = document.getElementById('memo-font-size-input');
+  const disp = document.getElementById('memo-font-size-display');
+  const currentVal = (target === 'all') ? memoFontConfig.body : (memoFontConfig[target] || 16);
+  if (input) input.value = currentVal;
+  if (disp) disp.innerText = `${currentVal}pt`;
+};
+
+window.applyMemoStyles = function () {
+  const memoPaper = document.querySelector('.memo-paper');
+  if (!memoPaper) return;
+
+  // ระยะขอบ 4 ทิศทาง (มาตรฐาน: บน 2cm, ล่าง 2cm, ซ้าย 2.5cm, ขวา 2cm)
+  memoPaper.style.paddingTop = `${memoMargins.top}cm`;
+  memoPaper.style.paddingBottom = `${memoMargins.bottom}cm`;
+  memoPaper.style.paddingLeft = `${memoMargins.left}cm`;
+  memoPaper.style.paddingRight = `${memoMargins.right}cm`;
+
+  // อัปเดตช่องตัวเลขขอบ 4 ด้านในแถบเครื่องมือ
+  const inTop = document.getElementById('margin-in-top');
+  const inBottom = document.getElementById('margin-in-bottom');
+  const inLeft = document.getElementById('margin-in-left');
+  const inRight = document.getElementById('margin-in-right');
+  if (inTop) inTop.value = memoMargins.top;
+  if (inBottom) inBottom.value = memoMargins.bottom;
+  if (inLeft) inLeft.value = memoMargins.left;
+  if (inRight) inRight.value = memoMargins.right;
+
+  // ระยะบรรทัด
+  memoPaper.style.lineHeight = memoLineSpacing;
+
+  // ปรับขนาดฟอนต์หัวกระดาษ "บันทึกข้อความ"
+  memoPaper.querySelectorAll('.memo-title-banner h1').forEach(el => {
+    el.style.fontSize = `${memoFontConfig.title || 29}pt`;
+  });
+
+  // ปรับขนาดฟอนต์หัวหนังสือ
+  memoPaper.querySelectorAll('.memo-info-table td, .memo-info-table td *').forEach(el => {
+    el.style.fontSize = `${memoFontConfig.header}pt`;
+  });
+
+  // ปรับขนาดฟอนต์เนื้อหา
+  memoPaper.querySelectorAll('.memo-section-heading, .memo-para').forEach(el => {
+    el.style.fontSize = `${memoFontConfig.body}pt`;
+  });
+
+  // ปรับขนาดฟอนต์ส่วนลงนาม & กล่องเสนอ/อนุมัติ
+  memoPaper.querySelectorAll('.memo-sign-table, .memo-sign-table td, .memo-sign-table td *, #memo-chef-box-card, #memo-chef-box-card *, #memo-exec-box-card, #memo-exec-box-card *').forEach(el => {
+    if (!el.classList.contains('no-print') && !el.closest('.no-print')) {
+      el.style.fontSize = `${memoFontConfig.sign}pt`;
+    }
+  });
+
+  // บันทึกการตั้งค่าลง localStorage
+  try {
+    localStorage.setItem('pyh_memo_margins', JSON.stringify(memoMargins));
+    localStorage.setItem('pyh_memo_fonts', JSON.stringify(memoFontConfig));
+  } catch(e) {}
+};
+
+// ฟังก์ชันปรับระยะกั้นหน้า-กั้นหลัง (Margin ซ้าย-ขวา แบบปุ่มกด)
+window.adjustMemoMargin = function (deltaMm) {
+  const newLeft = parseFloat((memoMargins.left + (deltaMm / 10)).toFixed(1));
+  const newRight = parseFloat((memoMargins.right + (deltaMm / 10)).toFixed(1));
+  if (newLeft < 1.0 || newLeft > 4.5) return;
+  memoMargins.left = newLeft;
+  memoMargins.right = Math.max(1.0, newRight);
+  window.applyMemoStyles();
+};
+
+window.adjustMemoSpacing = function (delta) {
+  memoLineSpacing = Math.max(1.15, Math.min(1.85, parseFloat((memoLineSpacing + delta).toFixed(2))));
+  window.applyMemoStyles();
+};
+
+window.resetMemoContent = function () {
+  if (confirm("ต้องการคืนค่าข้อความและการจัดหน้าเริ่มต้นใช่ไหม?")) {
+    localStorage.removeItem('pyh_custom_memo_data');
+    localStorage.removeItem('pyh_memo_exec_box_offset');
+    localStorage.removeItem('pyh_memo_chef_box_offset');
+    localStorage.removeItem('pyh_memo_margins');
+    localStorage.removeItem('pyh_memo_fonts');
+    memoFontConfig = { title: 29, header: 16, body: 16, sign: 15 };
+    memoMargins = { top: 2.0, bottom: 2.0, left: 2.5, right: 2.0 };
+    memoLineSpacing = 1.45;
+    memoExecBoxOffset = { x: 0, y: 0 };
+    memoChefBoxOffset = { x: 0, y: 0 };
+    memoExecBoxPosition = 'left';
+    window.updateMemoFontDisplay();
+    renderOfficialMemo();
+  }
+};
+
+// บันทึกข้อความที่ผู้ใช้พิมพ์แก้ไขลงใน localStorage อัตโนมัติ
+window.saveMemoEdits = function () {
+  const paper = document.querySelector('.memo-paper');
+  if (!paper) return;
+
+  const data = {
+    dept: document.getElementById('memo-dept')?.innerText || '',
+    tel: document.getElementById('memo-tel')?.innerText || '',
+    docNo: document.getElementById('memo-doc-no')?.innerText || '',
+    docDate: document.getElementById('memo-doc-date')?.innerText || '',
+    subject: document.getElementById('memo-subject')?.innerText || '',
+    to: document.getElementById('memo-to')?.innerText || '',
+    bgText: document.getElementById('memo-para-bg')?.innerText || '',
+    considerText: document.getElementById('memo-para-consider')?.innerText || '',
+    proposeText: document.getElementById('memo-para-propose')?.innerText || '',
+    savedAt: new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem('pyh_custom_memo_data', JSON.stringify(data));
+  } catch (e) { }
+};
+
+window.renderSelectedReport = function () {
+  if (currentReportFormat === 'memo') {
+    window.renderOfficialMemo();
+  } else {
+    window.generateExecutiveReport();
+  }
+};
+
+// เรนเดอร์เอกสาร "แบบบันทึกข้อความราชการ" (Official Memo)
+window.renderOfficialMemo = function () {
+  const container = document.getElementById('report-content-body');
+  if (!container) return;
+
+  // คำนวณยอดสถิติจริงของอุปกรณ์ในระบบ
+  const totalAssets = assetsList.length;
+  const checkedAssets = assetsList.filter(a => a.lastChecked);
+  const checkedCount = checkedAssets.length;
+  const readyCount = assetsList.filter(a => a.status === 'READY' && a.lastChecked).length;
+  const issueAssets = assetsList.filter(a => a.status === 'ISSUE');
+  const issueCount = issueAssets.length;
+
+  const feTotal = assetsList.filter(a => a.assetId.startsWith('PYH-FE') || a.type.includes('ถังดับเพลิง')).length;
+  const emTotal = assetsList.filter(a => a.assetId.startsWith('PYH-EM') || a.type.includes('ไฟฉุกเฉิน')).length;
+
+  // ผู้จัดทำและผู้บริหาร
+  // ผู้จัดทำ, ผู้ตรวจสอบ (หัวหน้ากลุ่มงาน), และผู้บริหาร
+  const authorName = getCleanName(currentOfficer) || "นายสุวิทย์ พวงสมบัติ";
+  const authorPos = "นายช่างเทคนิค";
+  const chefReviewerName = getCleanName(document.getElementById('report-reviewer-name')?.value.trim() || "นายคมสัน ศรีสิงห์");
+  const chefReviewerPos1 = "นักเทคนิคการแพทย์ปฏิบัติการ รักษาการในตำแหน่ง";
+  const chefReviewerPos2 = "หัวหน้ากลุ่มงานบริหารทั่วไป";
+  const approverName = "นางสาวศิริพรรณ ชมพูภู่";
+  const approverPos = "ผู้อำนวยการโรงพยาบาลพยุหะคีรี";
+
+  // วันที่ปัจจุบันแบบไทย
+  const now = new Date();
+  const thaiDay = toThaiNumerals(now.getDate());
+  const thaiMonth = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'][now.getMonth()];
+  const thaiYear = toThaiNumerals(now.getFullYear() + 543);
+  const thaiDateFormatted = `${thaiDay}   ${thaiMonth}  ${thaiYear}`;
+
+  // ดึงข้อมูลที่เคยแก้ไขไว้ (ถ้ามี)
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('pyh_custom_memo_data');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) { }
+
+  // ดึงการตั้งค่าขอบและฟอนต์ที่เคยบันทึกไว้ (ถ้ามี)
+  try {
+    const rawMarg = localStorage.getItem('pyh_memo_margins');
+    if (rawMarg) memoMargins = Object.assign(memoMargins, JSON.parse(rawMarg));
+    const rawFonts = localStorage.getItem('pyh_memo_fonts');
+    if (rawFonts) memoFontConfig = Object.assign(memoFontConfig, JSON.parse(rawFonts));
+  } catch(e) {}
+
+  const deptVal = saved?.dept || "กลุ่มงานบริหารทั่วไปและงานซ่อมบำรุง โรงพยาบาลพยุหะคีรี อำเภอพยุหะคีรี จังหวัดนครสวรรค์";
+  const docNoVal = saved?.docNo || `นว ๐๐๓๓.๓/พิเศษ`;
+  const docDateVal = saved?.docDate || thaiDateFormatted;
+  const subjectVal = saved?.subject || `รายงานผลการตรวจสอบความพร้อมอุปกรณ์ความปลอดภัยอัคคีภัยและโคมไฟฉุกเฉิน ประจำงวดปีงบประมาณ ${thaiYear}`;
+  const toVal = saved?.to || "ผู้อำนวยการโรงพยาบาลพยุหะคีรี";
+
+  const defaultBgText = `ด้วย งานอาคารสถานที่และซ่อมบำรุง กลุ่มงานบริหารทั่วไป โรงพยาบาลพยุหะคีรี มีภารกิจในการดูแล บำรุงรักษา และกำกับความพร้อมใช้งานของระบบความปลอดภัยด้านกายภาพและสิ่งแวดล้อม ตามเกณฑ์ MOIT ๒ ข้อ ๒ (๒.๒) และมาตรฐาน HA ตอนที่ II (ENV 1-4) เพื่อประโยชน์และความปลอดภัยสูงสุดต่อผู้ป่วย ญาติ และบุคลากรผู้ปฏิบัติงาน ให้เป็นไปตามพระราชบัญญัติควบคุมอาคาร และมาตรฐานความปลอดภัยด้านอัคคีภัยในสถานพยาบาลอย่างเคร่งครัด`;
+
+  let defectSummaryThai = "";
+  if (issueCount > 0) {
+    const issueIds = issueAssets.map(a => a.assetId).join(', ');
+    defectSummaryThai = ` ทั้งนี้ ตรวจพบอุปกรณ์ที่มีข้อบกพร่อง/ชำรุดจำนวน ${toThaiNumerals(issueCount)} จุด ได้แก่ ${issueIds} ซึ่งได้ดำเนินการจัดเตรียมถังสำรองเปลี่ยนทดแทน และประสานงานส่งซ่อมแซม/อัดบรรจุสารเคมีใหม่เรียบร้อยแล้ว`;
+  } else {
+    defectSummaryThai = ` โดยไม่พบความชำรุดเสียหาย อุปกรณ์ทั้งหมดอยู่ในเกณฑ์พร้อมใช้งานตามมาตรฐานความปลอดภัยอย่างครบถ้วน`;
+  }
+
+  const defaultConsiderText = `งานอาคารสถานที่และซ่อมบำรุง ขอรายงานผลการตรวจสอบความพร้อมใช้งานของถังดับเพลิงมือถือและโคมไฟส่องสว่างฉุกเฉินทั่วทั้งโรงพยาบาลพยุหะคีรี ครอบคลุมทั้งสิ้น ๖ อาคาร รวม ${toThaiNumerals(totalAssets)} จุดตรวจ (ถังดับเพลิง ${toThaiNumerals(feTotal)} จุด และโคมไฟฉุกเฉิน ${toThaiNumerals(emTotal)} จุด) ได้ดำเนินการตรวจเช็กสภาพความสมบูรณ์ แรงดันเกจ์ สลักนิรภัย และแบตเตอรี่สำรองแล้วเสร็จจำนวน ${toThaiNumerals(checkedCount)} จุด (${toThaiNumerals(Math.round((checkedCount / (totalAssets || 1)) * 100))}%) พบอุปกรณ์พร้อมใช้งานสมบูรณ์ ${toThaiNumerals(readyCount)} จุด${defectSummaryThai} เพื่อให้ระบบความปลอดภัยของโรงพยาบาลพยุหะคีรีมีมาตรฐานและความพร้อมใช้งานในระดับสูงสุดตลอด ๒๔ ชั่วโมง`;
+
+  const defaultProposeText = `จึงเรียนมาเพื่อโปรดทราบ และพิจารณาอนุมัติดำเนินการตามมาตรการบำรุงรักษาอุปกรณ์ความปลอดภัยดังกล่าวต่อไป`;
+
+  let bgText = saved?.bgText || defaultBgText;
+  if (bgText && bgText.includes('(Environmental and Safety: HA ENV)')) {
+    bgText = defaultBgText;
+  }
+  const considerText = saved?.considerText || defaultConsiderText;
+  const proposeText = saved?.proposeText || defaultProposeText;
+
+  const memoHtml = `
+    <div class="memo-paper" style="padding-top:${memoMargins.top}cm; padding-bottom:${memoMargins.bottom}cm; padding-left:${memoMargins.left}cm; padding-right:${memoMargins.right}cm; line-height:${memoLineSpacing};" oninput="saveMemoEdits()">
+      
+      <!-- ส่วนหัวตราครุฑและคำว่า บันทึกข้อความ -->
+      <div class="memo-header-top">
+        <img src="garuda.svg" alt="ตราครุฑ" class="memo-garuda-img">
+        <div class="memo-title-banner">
+          <h1 style="font-size:${memoFontConfig.title || 29}pt;">บันทึกข้อความ</h1>
+        </div>
+      </div>
+
+      <!-- ส่วนหัวหนังสือราชการ -->
+      <table class="memo-info-table" style="font-size:${memoFontConfig.header}pt;">
+        <tr>
+          <td colspan="2" style="padding-bottom:5px;">
+            <div style="display:flex; align-items:flex-start;">
+              <span class="memo-label" style="font-size:${memoFontConfig.header}pt; min-width:85px; flex-shrink:0;">ส่วนราชการ</span>
+              <div style="flex:1; line-height:1.4; font-size:${memoFontConfig.header}pt;">
+                <span id="memo-dept" class="memo-editable" contenteditable="true" style="font-size:${memoFontConfig.header}pt;">${deptVal}</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="width:52%; padding-bottom:5px;">
+            <div style="display:flex; align-items:center;">
+              <span class="memo-label" style="font-size:${memoFontConfig.header}pt; min-width:30px; flex-shrink:0;">ที่</span>
+              <span id="memo-doc-no" class="memo-editable" contenteditable="true" style="margin-left:8px; min-width:140px; font-size:${memoFontConfig.header}pt;">${docNoVal}</span>
+            </div>
+          </td>
+          <td style="width:48%; padding-bottom:5px;">
+            <div style="display:flex; align-items:center;">
+              <span class="memo-label" style="font-size:${memoFontConfig.header}pt; min-width:45px; flex-shrink:0;">วันที่</span>
+              <span id="memo-doc-date" class="memo-editable" contenteditable="true" style="margin-left:8px; min-width:140px; font-size:${memoFontConfig.header}pt;">${docDateVal}</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding-bottom:5px;">
+            <div style="display:flex; align-items:flex-start;">
+              <span class="memo-label" style="font-size:${memoFontConfig.header}pt; min-width:45px; flex-shrink:0;">เรื่อง</span>
+              <div style="flex:1; line-height:1.4; font-size:${memoFontConfig.header}pt;">
+                <span id="memo-subject" class="memo-editable" contenteditable="true" style="font-size:${memoFontConfig.header}pt; font-weight:700;">${subjectVal}</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding-top:2px; padding-bottom:12px;">
+            <div style="display:flex; align-items:center;">
+              <span class="memo-label" style="font-size:${memoFontConfig.header}pt; min-width:45px; flex-shrink:0;">เรียน</span>
+              <span id="memo-to" class="memo-editable" contenteditable="true" style="margin-left:8px; font-size:${memoFontConfig.header}pt;">${toVal}</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- ย่อหน้าที่ 1: ความเป็นมา -->
+      <div class="memo-section-heading" style="font-size:${memoFontConfig.body}pt;">ความเป็นมา</div>
+      <div id="memo-para-bg" class="memo-para memo-editable-block" contenteditable="true" style="font-size:${memoFontConfig.body}pt;">
+        ${bgText}
+      </div>
+
+      <!-- ย่อหน้าที่ 2: ข้อพิจารณา -->
+      <div class="memo-section-heading" style="font-size:${memoFontConfig.body}pt;">ข้อพิจารณา</div>
+      <div id="memo-para-consider" class="memo-para memo-editable-block" contenteditable="true" style="font-size:${memoFontConfig.body}pt;">
+        ${considerText}
+      </div>
+
+      <!-- ย่อหน้าที่ 3: ข้อเสนอ / ข้อสั่งการ -->
+      <div id="memo-para-propose" class="memo-para memo-editable-block" contenteditable="true" style="font-size:${memoFontConfig.body}pt; margin-top:14px; margin-bottom:20px;">
+        ${proposeText}
+      </div>
+
+      <!-- ส่วนลงนามผู้รายงาน, กล่องเสนอ ผอ. (หน.กลุ่มงาน), และคำสั่งการผู้อำนวยการ -->
+      ${(() => {
+        // ดึง offset ที่บันทึกไว้สำหรับกล่อง ผอ.
+        try {
+          const rawOff = localStorage.getItem('pyh_memo_exec_box_offset');
+          if (rawOff) memoExecBoxOffset = JSON.parse(rawOff);
+        } catch(e) {}
+
+        // ดึง offset ที่บันทึกไว้สำหรับกล่อง หน.กลุ่มงาน
+        try {
+          const rawChefOff = localStorage.getItem('pyh_memo_chef_box_offset');
+          if (rawChefOff) memoChefBoxOffset = JSON.parse(rawChefOff);
+        } catch(e) {}
+
+        const transformStyle = (memoExecBoxOffset.x || memoExecBoxOffset.y) 
+          ? `transform: translate(${memoExecBoxOffset.x}px, ${memoExecBoxOffset.y}px);` 
+          : '';
+
+        const chefTransformStyle = (memoChefBoxOffset.x || memoChefBoxOffset.y)
+          ? `transform: translate(${memoChefBoxOffset.x}px, ${memoChefBoxOffset.y}px);`
+          : '';
+
+        // กล่องคำสั่งการ / การอนุมัติของ ผอ. (รองรับการใช้เมาส์ลากย้ายตำแหน่งได้อิสระ)
+        const execBoxHtml = `
+          <div id="memo-exec-box-card" style="margin-top:${memoExecBoxMarginTop}px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:#fafafa; text-align:left; cursor:grab; position:relative; ${transformStyle}">
+            <div id="memo-exec-box-drag-handle" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; user-select:none;">
+              <span style="font-weight:700; font-size:${memoFontConfig.sign}pt; color:#0f172a;">คำสั่งการ / การอนุมัติ</span>
+              <span class="no-print" style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:3px; background:#f1f5f9; padding:2px 6px; border-radius:4px;" title="คลิกค้างแล้วลากเมาส์เพื่อย้ายตำแหน่งกล่อง ผอ. ได้อย่างอิสระ">
+                ✥ ลากย้ายได้
+              </span>
+            </div>
+            
+            <!-- ตัวเลือกคำสั่งการแบบช่องเช็ก [ ✓ ] รับทราบ [   ] อนุมัติซ่อมแซม (คลิกสลับได้โดยตรง) -->
+            <div style="margin-bottom:10px; font-size:${memoFontConfig.sign}pt; display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+              <span id="print-appr-ack" onclick="setExecutiveApproval('acknowledge')" style="cursor:pointer; user-select:none; font-family:'TH Sarabun New', 'Sarabun', sans-serif;">[ &nbsp; ] รับทราบ</span>
+              <span id="print-appr-repair" onclick="setExecutiveApproval('repair')" style="cursor:pointer; user-select:none; font-family:'TH Sarabun New', 'Sarabun', sans-serif;">[ ✓ ] อนุมัติซ่อมแซม</span>
+            </div>
+
+            <!-- ช่องลงนาม ผอ. (ไม่มีบรรทัดวันที่) -->
+            <div style="text-align:center; margin-top:10px;">
+              <div id="exec-cert-container" style="min-height:28px;">
+                <!-- เติมโดย renderExecutiveCertificationUI() -->
+              </div>
+              <div style="border-bottom:1px dotted #94a3b8; width:80%; margin:4px auto 4px auto;"></div>
+              <div style="font-weight:700; font-size:${memoFontConfig.sign}pt;" id="report-display-exec-name">( ${approverName} )</div>
+              <div style="font-size:${memoFontConfig.sign - 2}pt; color:#475569;">${approverPos}</div>
+            </div>
+          </div>
+        `;
+
+        // ส่วนลงนามผู้จัดทำ / ผู้รายงาน (ช่างเทคนิค - ไม่มีบรรทัดวันที่)
+        const techSignHtml = `
+          <div style="margin-top:6px; text-align:center;">
+            <!-- ลายเซ็นดิจิทัลของช่าง/ผู้รายงาน -->
+            <div id="tech-cert-container" style="min-height:36px;">
+              <!-- เติมโดย renderTechCertificationUI() -->
+            </div>
+
+            <div style="border-bottom:1px dotted #94a3b8; width:75%; margin:4px auto 6px auto;"></div>
+            <div style="font-weight:700; font-size:${memoFontConfig.sign}pt;" id="report-display-tech-name">( ${authorName} )</div>
+            <div style="font-size:${memoFontConfig.sign - 1}pt; color:#334155;" id="report-display-tech-pos">${authorPos}</div>
+          </div>
+        `;
+
+        // กล่องข้อความหัวหน้ากลุ่มงานบริหารทั่วไป (เสนอ ผอ.)
+        const chefBoxHtml = `
+          <div id="memo-chef-box-card" style="margin-top:${memoExecBoxMarginTop}px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:8px; background:#fafafa; text-align:left; cursor:grab; position:relative; ${chefTransformStyle}">
+            <div id="memo-chef-box-drag-handle" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; user-select:none;">
+              <span style="font-weight:700; font-size:${memoFontConfig.sign}pt; color:#0f172a;">เรียน ผู้อำนวยการโรงพยาบาลพยุหะคีรี</span>
+              <span class="no-print" style="font-size:11px; color:#94a3b8; display:flex; align-items:center; gap:3px; background:#f1f5f9; padding:2px 6px; border-radius:4px;" title="คลิกค้างแล้วลากเมาส์เพื่อย้ายตำแหน่งกล่องนี้ได้อย่างอิสระ">
+                ✥ ลากย้ายได้
+              </span>
+            </div>
+
+            <!-- ข้อความเพื่อรับทราบ / พิจารณาอนุมัติ (คลิกสลับได้) -->
+            <div style="margin-bottom:10px; font-size:${memoFontConfig.sign}pt; display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+              <span style="font-weight:600;">เพื่อ</span>
+              <span id="memo-chef-opt-ack" onclick="setChefApproval('ack')" style="cursor:pointer; user-select:none; font-family:'TH Sarabun New', 'Sarabun', sans-serif;">[ ✓ ] โปรดรับทราบ</span>
+              <span id="memo-chef-opt-approve" onclick="setChefApproval('approve')" style="cursor:pointer; user-select:none; font-family:'TH Sarabun New', 'Sarabun', sans-serif;">[ &nbsp; ] โปรดพิจารณาอนุมัติ</span>
+            </div>
+
+            <!-- ช่องลายเซ็นหัวหน้ากลุ่มงาน -->
+            <div style="text-align:center; margin-top:8px;">
+              <div id="memo-chef-cert-container" style="min-height:28px;">
+                <!-- เติมโดย renderChefCertificationUI() -->
+              </div>
+              <div style="border-bottom:1px dotted #94a3b8; width:80%; margin:4px auto 4px auto;"></div>
+              <div style="font-weight:700; font-size:${memoFontConfig.sign}pt;" id="memo-display-chef-name">( ${chefReviewerName} )</div>
+              <div style="font-size:${memoFontConfig.sign - 2}pt; color:#475569;">${chefReviewerPos1}</div>
+              <div style="font-size:${memoFontConfig.sign - 2}pt; color:#475569;">${chefReviewerPos2}</div>
+            </div>
+          </div>
+        `;
+
+        if (memoExecBoxPosition === 'right') {
+          // ถ้าเลือกตำแหน่ง 'ขวา': วางช่างทางขวา, กล่อง หน.กลุ่มงาน ถัดลงมา, แล้วตามด้วยกล่อง ผอ.
+          return `
+            <table class="memo-sign-table" style="width:100%; font-size:${memoFontConfig.sign}pt; border-collapse:collapse;">
+              <tr>
+                <td style="width:40%;"></td>
+                <td style="width:60%; vertical-align:top; text-align:center;">
+                  ${techSignHtml}
+                </td>
+              </tr>
+              <tr>
+                <td style="width:40%;"></td>
+                <td style="width:60%; vertical-align:top;">
+                  ${chefBoxHtml}
+                </td>
+              </tr>
+              <tr>
+                <td style="width:40%;"></td>
+                <td style="width:60%; vertical-align:top;">
+                  ${execBoxHtml}
+                </td>
+              </tr>
+            </table>
+          `;
+        } else {
+          // ตำแหน่ง 'ซ้าย' (มาตรฐาน 2 คอลัมน์):
+          // ฝั่งซ้าย: กล่อง ผอ. (คำสั่งการ / การอนุมัติ)
+          // ฝั่งขวา: ลายเซ็นช่างผู้รายงาน + กล่อง หน.กลุ่มงาน (เรียน ผอ. เพื่อโปรดรับทราบ/อนุมัติ)
+          return `
+            <table class="memo-sign-table" style="width:100%; font-size:${memoFontConfig.sign}pt; border-collapse:collapse;">
+              <tr>
+                <td style="width:48%; vertical-align:top; padding-right:12px;">
+                  ${execBoxHtml}
+                </td>
+                <td style="width:52%; vertical-align:top; padding-left:8px;">
+                  ${techSignHtml}
+                  <div style="margin-top:14px;">
+                    ${chefBoxHtml}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          `;
+        }
+      })()}
+    </div>
+  `;
+
+  container.innerHTML = memoHtml;
+
+  // เปิดใช้งานฟังก์ชันลากย้ายกล่อง ผอ. และกล่อง หน.กลุ่มงาน ด้วยเมาส์
+  if (typeof window.initExecBoxDraggable === 'function') {
+    window.initExecBoxDraggable();
+  }
+  if (typeof window.initChefBoxDraggable === 'function') {
+    window.initChefBoxDraggable();
+  }
+
+  // ซิงก์ลายเซ็นและคำสั่งการที่มีอยู่ในระบบ
+  if (typeof window.renderTechCertificationUI === 'function') {
+    window.renderTechCertificationUI();
+  }
+  if (typeof window.renderChefCertificationUI === 'function') {
+    window.renderChefCertificationUI();
+  }
+  if (typeof window.renderExecutiveCertificationUI === 'function') {
+    window.renderExecutiveCertificationUI();
+  }
+  if (typeof window.restoreExecutiveApproval === 'function') {
+    window.restoreExecutiveApproval();
+  }
+
+  // อัปเดตการแสดงผลขนาดฟอนต์และขอบกระดาษให้ตรงกับค่าปัจจุบัน
+  if (typeof window.applyMemoStyles === 'function') {
+    window.applyMemoStyles();
+  }
+  if (typeof window.updateMemoFontDisplay === 'function') {
+    window.updateMemoFontDisplay();
+  }
+};
+
 window.generateExecutiveReport = function () {
   const container = document.getElementById('report-content-body');
   if (!container) return;
@@ -4276,7 +5312,7 @@ window.simulateFullInspection = function () {
   updateDashboardUI();
   renderMapPins();
   renderHistoryTable();
-  window.generateExecutiveReport();
+  window.renderSelectedReport();
 
   alert(`⚡ จำลองผลการตรวจเช็กเสร็จสิ้นครบ 100% (${assetsList.length} จุดตรวจ)\n• ผลปกติพร้อมใช้งาน: ${assetsList.filter(a => a.status === 'READY').length} จุด\n• พบข้อบกพร่องแจ้งซ่อม: ${assetsList.filter(a => a.status === 'ISSUE').length} จุด (ER1-01, HPC-02, IPD-03)\nระบบได้ประมวลผลรายงานสรุปเสนอผู้บริหารให้ทันทีด้านล่าง!`);
 };
@@ -4285,7 +5321,7 @@ window.printExecutiveReport = function () {
   if (!requireLogin('สั่งพิมพ์รายงานสรุปผล')) return;
   const reportContainer = document.getElementById('report-content-body');
   if (!reportContainer || !reportContainer.innerHTML.trim()) {
-    window.generateExecutiveReport();
+    window.renderSelectedReport();
   }
   window.print();
 };
@@ -4447,17 +5483,32 @@ window.renderExecutiveCertificationUI = function () {
     }
     if (dateEl) dateEl.innerText = displayDate;
 
-    // แสดงเฉพาะลายมือชื่อ/ชื่อผู้ลงนามเหนือเส้นประ เหมือนลงนามในเอกสารราชการจริง (ไม่มีกรอบตราประทับ ไม่มีเวลา)
-    container.innerHTML = `
-      <div style="min-height:24px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+    let sigVisualHtml = '';
+    if (cert.signatureImg) {
+      sigVisualHtml = `<img src="${cert.signatureImg}" alt="ลายมือชื่อ ผอ." style="max-height:48px; max-width:140px; object-fit:contain; display:block; margin:0 auto;">`;
+    } else {
+      sigVisualHtml = `
         <span style="font-family:'TH Sarabun New', 'Sarabun', 'Cordia New', sans-serif; font-size:16px; font-weight:700; color:#0f172a; letter-spacing:0.5px; font-style:italic; line-height:1.2;">
           ${cleanName}
         </span>
+      `;
+    }
+
+    // แสดงเฉพาะลายมือชื่อ/รูปภาพลายเซ็นเหนือเส้นประ
+    container.innerHTML = `
+      <div style="min-height:36px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+        ${sigVisualHtml}
         ${canManage ? `
-          <button onclick="revokeExecutiveApproval()" class="no-print"
-            style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; margin-top:1px; padding:0;">
-            (ยกเลิก/ลงนามใหม่)
-          </button>
+          <div class="no-print" style="display:flex; gap:6px; margin-top:2px;">
+            <button onclick="openSignatureModal('executive')"
+              style="background:none; border:none; color:#0284c7; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+              (วาด/เปลี่ยนลายเซ็น)
+            </button>
+            <button onclick="revokeExecutiveApproval()"
+              style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+              (ยกเลิก)
+            </button>
+          </div>
         ` : ''}
       </div>
     `;
@@ -4465,10 +5516,14 @@ window.renderExecutiveCertificationUI = function () {
     if (nameEl) nameEl.innerHTML = `( ${defaultApprover} )`;
     if (canManage) {
       container.innerHTML = `
-        <div class="no-print" style="margin-bottom:4px;">
+        <div class="no-print" style="margin-bottom:4px; display:flex; gap:4px; justify-content:center;">
+          <button onclick="openSignatureModal('executive')" class="btn-sm"
+            style="background:linear-gradient(135deg, #0284c7, #0369a1); color:white; font-size:10.5px; padding:3px 10px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 5px rgba(2,132,199,0.25);">
+            ✍️ วาดลายเซ็น
+          </button>
           <button onclick="setExecutiveApproval('acknowledge')" class="btn-sm"
-            style="background:linear-gradient(135deg, #0284c7, #0369a1); color:white; font-size:11px; padding:4px 12px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 6px rgba(2,132,199,0.25);">
-            ✍️ ลงนามคำสั่งการ
+            style="background:linear-gradient(135deg, #00897b, #004d40); color:white; font-size:10.5px; padding:3px 10px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 5px rgba(0,105,92,0.25);">
+            ลงนามชื่อ
           </button>
         </div>
         <div class="only-print" style="height:20px;"></div>
@@ -4520,8 +5575,8 @@ window.autoLoadExecutiveFullReport = function () {
   if (reportControlsCard) reportControlsCard.style.display = 'none';
   if (execToolbar) execToolbar.style.display = 'block';
 
-  if (typeof window.generateExecutiveReport === 'function') {
-    window.generateExecutiveReport();
+  if (typeof window.renderSelectedReport === 'function') {
+    window.renderSelectedReport();
   }
 };
 
@@ -4611,17 +5666,32 @@ window.renderTechCertificationUI = function () {
 
     const canRevoke = (currentUserRole === 'inspector' || currentUserRole === 'admin');
 
-    // แสดงเฉพาะลายมือชื่อ/ชื่อผู้ลงนามเหนือเส้นประ เหมือนลงนามในเอกสารราชการจริง (ไม่มีกรอบตราประทับ ไม่มีเวลา)
-    container.innerHTML = `
-      <div style="min-height:24px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+    let sigVisualHtml = '';
+    if (cert.signatureImg) {
+      sigVisualHtml = `<img src="${cert.signatureImg}" alt="ลายมือชื่อ" style="max-height:48px; max-width:140px; object-fit:contain; display:block; margin:0 auto;">`;
+    } else {
+      sigVisualHtml = `
         <span style="font-family:'TH Sarabun New', 'Sarabun', 'Cordia New', sans-serif; font-size:16px; font-weight:700; color:#0f172a; letter-spacing:0.5px; font-style:italic; line-height:1.2;">
           ${cleanName}
         </span>
+      `;
+    }
+
+    // แสดงเฉพาะลายมือชื่อ/ชื่อผู้ลงนามเหนือเส้นประ เหมือนลงนามในเอกสารราชการจริง (ไม่มีกรอบตราประทับ ไม่มีเวลา)
+    container.innerHTML = `
+      <div style="min-height:36px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+        ${sigVisualHtml}
         ${canRevoke ? `
-          <button onclick="revokeTechnicianInspection()" class="no-print"
-            style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; margin-top:1px; padding:0;">
-            (ยกเลิก/ลงนามใหม่)
-          </button>
+          <div class="no-print" style="display:flex; gap:6px; margin-top:2px;">
+            <button onclick="openSignatureModal('inspector')"
+              style="background:none; border:none; color:#0284c7; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+              (วาด/เปลี่ยนลายเซ็น)
+            </button>
+            <button onclick="revokeTechnicianInspection()"
+              style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+              (ยกเลิก)
+            </button>
+          </div>
         ` : ''}
       </div>
     `;
@@ -4629,10 +5699,14 @@ window.renderTechCertificationUI = function () {
     if (nameEl) nameEl.innerHTML = `( ${defaultTech} )`;
     if (currentUserRole === 'inspector' || currentUserRole === 'admin') {
       container.innerHTML = `
-        <div class="no-print" style="margin-bottom:4px;">
+        <div class="no-print" style="margin-bottom:4px; display:flex; gap:4px; justify-content:center;">
+          <button onclick="openSignatureModal('inspector')" class="btn-sm"
+            style="background:linear-gradient(135deg, #0284c7, #0369a1); color:white; font-size:10.5px; padding:3px 10px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 5px rgba(2,132,199,0.25);">
+            ✍️ วาดลายเซ็น
+          </button>
           <button onclick="certifyTechnicianInspection()" class="btn-sm"
-            style="background:linear-gradient(135deg, #00897b, #004d40); color:white; font-size:11px; padding:4px 12px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 6px rgba(0,105,92,0.25);">
-            ✍️ ลงนามรับรองผลตรวจ
+            style="background:linear-gradient(135deg, #00897b, #004d40); color:white; font-size:10.5px; padding:3px 10px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 5px rgba(0,105,92,0.25);">
+            รับรองชื่อ
           </button>
         </div>
         <div class="only-print" style="height:20px;"></div>
@@ -4707,11 +5781,37 @@ window.revokeChefInspection = async function () {
   renderChefCertificationUI();
 };
 
+window.setChefApproval = function(choice) {
+  let cert = null;
+  try {
+    const raw = localStorage.getItem('pyh_chef_certification');
+    if (raw) cert = JSON.parse(raw);
+  } catch(e) {}
+
+  const prevSig = cert?.signatureImg || null;
+  const defaultChef = getCleanName(document.getElementById('report-reviewer-name')?.value.trim() || "นายคมสัน ศรีสิงห์");
+  const now = new Date();
+  const fullThaiDateStr = formatThaiFullDate(now);
+
+  const certData = {
+    officer: cert?.officer || defaultChef,
+    role: 'chef_inspector',
+    choice: choice, // 'ack' or 'approve'
+    signatureImg: prevSig,
+    certifiedAt: now.toISOString(),
+    certifiedDateStr: fullThaiDateStr,
+    certifiedTimeStr: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  };
+
+  localStorage.setItem('pyh_chef_certification', JSON.stringify(certData));
+  window.renderChefCertificationUI();
+};
+
 window.renderChefCertificationUI = function () {
   const container = document.getElementById('chef-cert-container');
+  const memoContainer = document.getElementById('memo-chef-cert-container');
   const nameEl = document.getElementById('report-display-chef-name');
   const dateEl = document.getElementById('chef-sign-date-str');
-  if (!container) return;
 
   let cert = null;
   try {
@@ -4719,54 +5819,108 @@ window.renderChefCertificationUI = function () {
     if (raw) cert = JSON.parse(raw);
   } catch (e) { }
 
-  const defaultChef = getCleanName(document.getElementById('report-reviewer-name')?.value.trim() || "นายคมสันต์ ศรีสิงห์");
+  const defaultChef = getCleanName(document.getElementById('report-reviewer-name')?.value.trim() || "นายคมสัน ศรีสิงห์");
   const isChefOrAdmin = (currentUserRole === 'chef_inspector' || currentUserRole === 'chef inspector' || currentUserRole === 'admin');
 
-  if (cert && cert.officer) {
-    const cleanName = getCleanName(cert.officer) || defaultChef;
+  // อัปเดตตัวเลือกในกล่องบันทึกข้อความ [ ] โปรดรับทราบ [ ] โปรดพิจารณาอนุมัติ
+  const choice = cert?.choice || 'ack';
+  const memoAckEl = document.getElementById('memo-chef-opt-ack');
+  const memoApproveEl = document.getElementById('memo-chef-opt-approve');
+  if (memoAckEl) {
+    memoAckEl.innerHTML = (choice === 'ack') ? '<b>[ ✓ ] โปรดรับทราบ</b>' : '[ &nbsp; ] โปรดรับทราบ';
+  }
+  if (memoApproveEl) {
+    memoApproveEl.innerHTML = (choice === 'approve') ? '<b>[ ✓ ] โปรดพิจารณาอนุมัติ</b>' : '[ &nbsp; ] โปรดพิจารณาอนุมัติ';
+  }
+
+  const cleanName = cert?.officer ? getCleanName(cert.officer) : defaultChef;
+
+  let sigVisualHtml = '';
+  if (cert && cert.signatureImg) {
+    sigVisualHtml = `<img src="${cert.signatureImg}" alt="ลายมือชื่อ หน.กลุ่มงาน" style="max-height:48px; max-width:140px; object-fit:contain; display:block; margin:0 auto;">`;
+  } else if (cert && cert.officer) {
+    sigVisualHtml = `
+      <span style="font-family:'TH Sarabun New', 'Sarabun', 'Cordia New', sans-serif; font-size:16px; font-weight:700; color:#0f172a; letter-spacing:0.5px; font-style:italic; line-height:1.2;">
+        ${cleanName}
+      </span>
+    `;
+  }
+
+  // เติมลง memoContainer ในบันทึกข้อความ
+  if (memoContainer) {
+    if (sigVisualHtml) {
+      memoContainer.innerHTML = `
+        <div style="min-height:36px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+          ${sigVisualHtml}
+          ${isChefOrAdmin ? `
+            <div class="no-print" style="display:flex; gap:6px; margin-top:2px;">
+              <button onclick="openSignatureModal('chef')"
+                style="background:none; border:none; color:#4338ca; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+                (วาด/เปลี่ยนลายเซ็น)
+              </button>
+              <button onclick="revokeChefInspection()"
+                style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; padding:0;">
+                (ยกเลิก)
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    } else {
+      memoContainer.innerHTML = `
+        <div class="no-print" style="margin-bottom:4px;">
+          <button onclick="openSignatureModal('chef')" class="btn-sm"
+            style="background:linear-gradient(135deg, #4338ca, #3730a3); color:white; font-size:11px; padding:3px 12px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 6px rgba(67,56,202,0.25);">
+            ✍️ เซ็นชื่อ หน.กลุ่มงาน
+          </button>
+        </div>
+        <div class="only-print" style="height:20px;"></div>
+      `;
+    }
+  }
+
+  // เติมลง container ของรายงานสถิติละเอียด (Detailed Report)
+  if (container) {
     if (nameEl) nameEl.innerHTML = `( ${cleanName} )`;
 
-    // แปลงวันที่ให้เป็นรูปแบบ "วันที่ 8 กันยายน พ.ศ. 2569" เสมอ
-    let displayDate = cert.certifiedDateStr;
+    let displayDate = cert?.certifiedDateStr;
     if (!displayDate || displayDate.includes('/')) {
-      const dt = cert.certifiedAt ? new Date(cert.certifiedAt) : new Date();
+      const dt = cert?.certifiedAt ? new Date(cert.certifiedAt) : new Date();
       displayDate = formatThaiFullDate(isNaN(dt.getTime()) ? new Date() : dt);
     }
     if (dateEl) dateEl.innerText = displayDate;
 
-    // แสดงเฉพาะลายมือชื่อ/ชื่อผู้ลงนามเหนือเส้นประ เหมือนลงนามในเอกสารราชการจริง (ไม่มีกรอบตราประทับ ไม่มีเวลา)
-    container.innerHTML = `
-      <div style="min-height:24px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
-        <span style="font-family:'TH Sarabun New', 'Sarabun', 'Cordia New', sans-serif; font-size:16px; font-weight:700; color:#0f172a; letter-spacing:0.5px; font-style:italic; line-height:1.2;">
-          ${cleanName}
-        </span>
-        ${isChefOrAdmin ? `
-          <button onclick="revokeChefInspection()" class="no-print"
-            style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; margin-top:1px; padding:0;">
-            (ยกเลิก/ลงนามใหม่)
-          </button>
-        ` : ''}
-      </div>
-    `;
-  } else {
-    if (nameEl) nameEl.innerHTML = `( ${defaultChef} )`;
-    if (isChefOrAdmin) {
+    if (sigVisualHtml) {
       container.innerHTML = `
-        <div class="no-print" style="margin-bottom:4px;">
-          <button onclick="certifyChefInspection()" class="btn-sm"
-            style="background:linear-gradient(135deg, #0284c7, #0369a1); color:white; font-size:11px; padding:4px 12px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 6px rgba(2,132,199,0.25);">
-            ✍️ ลงนามรับรองผลตรวจ
-          </button>
+        <div style="min-height:24px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;">
+          ${sigVisualHtml}
+          ${isChefOrAdmin ? `
+            <button onclick="revokeChefInspection()" class="no-print"
+              style="background:none; border:none; color:#dc2626; font-size:9.5px; cursor:pointer; text-decoration:underline; margin-top:1px; padding:0;">
+              (ยกเลิก/ลงนามใหม่)
+            </button>
+          ` : ''}
         </div>
-        <div class="only-print" style="height:20px;"></div>
       `;
     } else {
-      container.innerHTML = `
-        <div class="no-print" style="display:inline-block; padding:3px 8px; background:#fffbeb; border:1px dashed #f59e0b; border-radius:6px; font-size:10.5px; color:#b45309;">
-          ⏳ รอผู้ตรวจสอบรับรองผล
-        </div>
-        <div class="only-print" style="height:20px;"></div>
-      `;
+      if (isChefOrAdmin) {
+        container.innerHTML = `
+          <div class="no-print" style="margin-bottom:4px;">
+            <button onclick="openSignatureModal('chef')" class="btn-sm"
+              style="background:linear-gradient(135deg, #4338ca, #3730a3); color:white; font-size:11px; padding:4px 12px; font-weight:700; border:none; border-radius:9999px; cursor:pointer; box-shadow:0 2px 6px rgba(67,56,202,0.25);">
+              ✍️ ลงนามรับรองผลตรวจ
+            </button>
+          </div>
+          <div class="only-print" style="height:20px;"></div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="no-print" style="display:inline-block; padding:3px 8px; background:#fffbeb; border:1px dashed #f59e0b; border-radius:6px; font-size:10.5px; color:#b45309;">
+            ⏳ รอผู้ตรวจสอบรับรองผล
+          </div>
+          <div class="only-print" style="height:20px;"></div>
+        `;
+      }
     }
   }
 };
